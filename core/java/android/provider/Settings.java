@@ -2302,6 +2302,8 @@ public final class Settings {
 
             // At one time in System, then Global, but now back in Secure
             MOVED_TO_SECURE.add(Secure.INSTALL_NON_MARKET_APPS);
+
+            MOVED_TO_SECURE.add(Secure.VOLUME_LINK_NOTIFICATION);
         }
 
         private static final HashSet<String> MOVED_TO_GLOBAL;
@@ -9885,6 +9887,14 @@ public final class Settings {
                 "packages_to_clear_data_before_full_restore";
 
         /**
+         * Boolean value whether to link ringtone and notification volume
+         * @hide
+         */
+        public static final String VOLUME_LINK_NOTIFICATION = "volume_link_notification";
+
+        private static final Validator VOLUME_LINK_NOTIFICATION_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
          * Whether user is allowed to pull down quick settings on secure keyguard.
          * @hide
          */
@@ -10395,7 +10405,8 @@ public final class Settings {
             MANUAL_RINGER_TOGGLE_COUNT,
             HUSH_GESTURE_USED,
             WIFI_DISCONNECT_DELAY_DURATION,
-            STATUS_BAR_BATTERY_STYLE
+            STATUS_BAR_BATTERY_STYLE,
+            VOLUME_LINK_NOTIFICATION,
         };
 
         /**
@@ -10545,6 +10556,7 @@ public final class Settings {
             VALIDATORS.put(WIFI_DISCONNECT_DELAY_DURATION, WIFI_DISCONNECT_DELAY_DURATION_VALIDATOR);
             VALIDATORS.put(STATUS_BAR_BATTERY_STYLE, STATUS_BAR_BATTERY_STYLE_VALIDATOR);
             VALIDATORS.put(LOCK_POWER_MENU_DISABLED, LOCK_POWER_MENU_DISABLED_VALIDATOR);
+            VALIDATORS.put(VOLUME_LINK_NOTIFICATION, VOLUME_LINK_NOTIFICATION_VALIDATOR);
         }
 
         /**
