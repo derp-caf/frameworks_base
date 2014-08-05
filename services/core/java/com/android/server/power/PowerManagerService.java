@@ -4537,7 +4537,11 @@ public final class PowerManagerService extends SystemService
                     }
                 }
             };
-            runWithProximityCheck(r);
+            if (checkProximity) {
+                runWithProximityCheck(r);
+            } else {
+                r.run();
+            }
         }
 
         @Override // Binder call
