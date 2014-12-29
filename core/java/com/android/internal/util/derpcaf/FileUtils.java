@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.internal.util.xtended;
+package com.android.internal.util.derpcaf;
 
 import android.util.Log;
 
