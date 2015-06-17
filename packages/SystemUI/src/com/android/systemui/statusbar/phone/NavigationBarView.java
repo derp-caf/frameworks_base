@@ -338,6 +338,7 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
+        final boolean deadZoneConsumed = shouldDeadZoneConsumeTouchEvents(event);
         boolean onehandedEnabled = Settings.System.getIntForUser(mContext.getContentResolver(),
                     Settings.System.ONE_HAND_MODE_ENABLED, 0, UserHandle.USER_CURRENT) == 1;
         if (onehandedEnabled) {
