@@ -34,5 +34,8 @@
     <!-- Package Manager -->
     <java-symbol type="array" name="config_disabledComponents" />
 
+    <!-- Rotation sensor -->
+    <java-symbol type="bool" name="config_useSystemClockforRotationSensor" />
+
 </resources>
 
