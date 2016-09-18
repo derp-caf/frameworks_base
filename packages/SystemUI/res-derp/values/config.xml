@@ -20,7 +20,7 @@
 
     <!-- The extra tiles to display in QuickSettings -->
     <string name="quick_settings_tiles_extra" translatable="false">
-	reboot,screenshot,sync,heads_up,immersive,cpuinfo,dataswitch
+	reboot,screenshot,sync,heads_up,immersive,cpuinfo,dataswitch,sound
     </string>
 
     <!-- Max visible notification icons -->
