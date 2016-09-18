@@ -49,6 +49,7 @@ import com.android.systemui.qs.tiles.RotationLockTile;
 import com.android.systemui.qs.tiles.ScreenrecordTile;
 import com.android.systemui.qs.tiles.ScreenshotTile;
 import com.android.systemui.qs.tiles.SyncTile;
+import com.android.systemui.qs.tiles.SoundTile;
 import com.android.systemui.qs.tiles.UserTile;
 import com.android.systemui.qs.tiles.WeatherTile;
 import com.android.systemui.qs.tiles.WifiTile;
@@ -134,6 +135,8 @@ public class QSFactoryImpl implements QSFactory {
                 return new ScreenrecordTile(mHost);
             case "expanded_desktop":
                 return new ExpandedDesktopTile(mHost);
+            case "sound":
+                return new SoundTile(mHost);
         }
 
         // Intent tiles.
