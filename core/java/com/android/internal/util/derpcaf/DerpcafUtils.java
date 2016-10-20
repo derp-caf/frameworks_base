@@ -232,6 +232,11 @@ public class DerpcafUtils {
         }
         return null;
     }
+
+    public static boolean isChineseLanguage() {
+       return Resources.getSystem().getConfiguration().locale.getLanguage().startsWith(
+               Locale.CHINESE.getLanguage());
+    }
 }
 
 
