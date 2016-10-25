@@ -13,14 +13,17 @@
 -->
 <resources>
 
-  <!-- Emergency button in power menu -->
-  <java-symbol type="bool" name="config_showEmergencyButtonInPowerMenu" />
+    <!-- Emergency button in power menu -->
+    <java-symbol type="bool" name="config_showEmergencyButtonInPowerMenu" />
 
     <!-- Whether to show WiFi/Hotspot generation number -->
     <java-symbol type="bool" name="config_show_network_generation" />
 
     <!-- Whether to cleanup fingerprints upon connection to the daemon and when user switches -->
     <java-symbol type="bool" name="config_cleanupUnusedFingerprints" />
+
+    <!-- Whether notify fingerprint client of successful cancelled authentication -->
+    <java-symbol type="bool" name="config_notifyClientOnFingerprintCancelSuccess" />
 
 </resources>
 
