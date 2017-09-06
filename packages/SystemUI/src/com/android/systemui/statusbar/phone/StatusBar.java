@@ -4965,7 +4965,10 @@ public class StatusBar extends SystemUI implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.QS_TILE_TITLE_VISIBILITY),
                     false, this, UserHandle.USER_ALL);
-	 }
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QS_FOOTER_WARNINGS),
+                    false, this, UserHandle.USER_ALL);
+        }
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
@@ -4993,12 +4996,19 @@ public class StatusBar extends SystemUI implements DemoMode,
 	    setMaxKeyguardNotifConfig();
 	    setLockscreenMediaMetadata();
             updateQsPanelResources();
+            setQsPanelOptions();
         }
     }
 
     private void updateQsPanelResources() {
        if (mQSPanel != null) {
            mQSPanel.updateResources();
+       }
+    }
+
+    private void setQsPanelOptions() {
+       if (mQSPanel != null) {
+           mQSPanel.updateSettings();
        }
     }
 
