@@ -43,7 +43,10 @@
     <string name="accessibility_quick_settings_caffeine_off">Caffeine off</string>
     <string name="accessibility_quick_settings_caffeine_on">Caffeine on</string>
 
-    <string name="statusbar_items_title">Statusbar Icons</string>
+    <!-- SystemUI Tuner -->
+    <string name="statusbar_items_title">Statusbar icon</string>
+    <string name="lockscreen_default">Default</string>
+    <string name="lockscreen_hidden">None</string>
 
     <!-- NavBar Tuner -->
     <string name="preview">Preview</string>
