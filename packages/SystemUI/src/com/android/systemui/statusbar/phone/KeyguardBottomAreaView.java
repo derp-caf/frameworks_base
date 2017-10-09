@@ -47,6 +47,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.service.media.CameraPrewarmService;
 import android.telecom.TelecomManager;
 import android.text.TextUtils;
@@ -919,7 +920,7 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
             final boolean showAffordance =
                     getResources().getBoolean(R.bool.config_keyguardShowLeftAffordance);
             if (mLeftIsVoiceAssist) {
-                mIconState.isVisible = mUserSetupComplete && showAffordance;
+                mIconState.isVisible = mUserSetupComplete && showAffordance && !hideShortcuts();
                 if (mLeftAssistIcon == null) {
                     mIconState.drawable = mContext.getDrawable(R.drawable.ic_mic_26dp);
                 } else {
@@ -928,7 +929,7 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
                 mIconState.contentDescription = mContext.getString(
                         R.string.accessibility_voice_assist_button);
             } else {
-                mIconState.isVisible = mUserSetupComplete && showAffordance && isPhoneVisible();
+                mIconState.isVisible = mUserSetupComplete && showAffordance && isPhoneVisible() && !hideShortcuts();
                 mIconState.drawable = mContext.getDrawable(R.drawable.ic_phone_24dp);
                 mIconState.contentDescription = mContext.getString(
                         R.string.accessibility_phone_button);
@@ -952,7 +953,8 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
             boolean isCameraDisabled = (mStatusBar != null) && !mStatusBar.isCameraAllowedByAdmin();
             mIconState.isVisible = !isCameraDisabled && resolved != null
                     && getResources().getBoolean(R.bool.config_keyguardShowCameraAffordance)
-                    && mUserSetupComplete;
+                    && mUserSetupComplete
+                    && !hideShortcuts();
             mIconState.drawable = mContext.getDrawable(R.drawable.ic_camera_alt_24dp);
             mIconState.contentDescription =
                     mContext.getString(R.string.accessibility_camera_button);
@@ -983,5 +985,12 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
                 KeyguardUpdateMonitor.getCurrentUser());
         boolean secure = mLockPatternUtils.isSecure(KeyguardUpdateMonitor.getCurrentUser());
         return (secure && !canSkipBouncer) ? SECURE_CAMERA_INTENT : INSECURE_CAMERA_INTENT;
+    }
+
+     private boolean hideShortcuts() {
+        boolean secure = mLockPatternUtils.isSecure(KeyguardUpdateMonitor.getCurrentUser());
+        return secure && Settings.Secure.getIntForUser(
+                mContext.getContentResolver(), Settings.Secure.HIDE_LOCK_SHORTCUTS, 0,
+                KeyguardUpdateMonitor.getCurrentUser()) != 0;
     }
 }
