@@ -48,8 +48,10 @@ import com.android.systemui.chaos.lab.gestureanywhere.GestureAnywhereView;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
+import android.app.ActivityManagerNative;
 import android.app.ActivityOptions;
 import android.app.AlarmManager;
+import android.app.IActivityManager;
 import android.app.IWallpaperManager;
 import android.app.KeyguardManager;
 import android.app.Notification;
@@ -219,6 +221,7 @@ import com.android.systemui.recents.events.activity.UndockingTaskEvent;
 import com.android.systemui.recents.misc.SystemServicesProxy;
 import com.android.systemui.settings.BrightnessController;
 import com.android.systemui.shared.system.WindowManagerWrapper;
+import com.android.systemui.slimrecent.RecentController;
 import com.android.systemui.stackdivider.Divider;
 import com.android.systemui.stackdivider.WindowManagerProxy;
 import com.android.systemui.statusbar.ActivatableNotificationView;
@@ -1592,6 +1595,18 @@ public class StatusBar extends SystemUI implements DemoMode,
             final int navbarPos = WindowManagerWrapper.getInstance().getNavBarPosition();
             if (navbarPos == NAV_BAR_POS_INVALID) {
                 return false;
+            }
+            if (mSlimRecents != null) {
+                boolean isInLockTaskMode = false;
+                try {
+                    IActivityManager activityManager = ActivityManagerNative.getDefault();
+                    if (activityManager.isInLockTaskMode()) {
+                        isInLockTaskMode = true;
+                   }
+                } catch (RemoteException e) {}
+                if (!isInLockTaskMode) {
+                    return mSlimRecents.startMultiWindow();
+                }
             }
             int createMode = navbarPos == NAV_BAR_POS_LEFT
                     ? ActivityManager.SPLIT_SCREEN_CREATE_MODE_BOTTOM_OR_RIGHT
@@ -3734,6 +3749,10 @@ public class StatusBar extends SystemUI implements DemoMode,
 
         mViewHierarchyManager.updateRowStates();
         mScreenPinningRequest.onConfigurationChanged();
+
+        if (mSlimRecents != null) {
+            mSlimRecents.onConfigurationChanged(newConfig);
+        }
     }
 
     @Override
@@ -5318,7 +5337,10 @@ public class StatusBar extends SystemUI implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.LOCKSCREEN_CLOCK_SELECTION),
                     false, this, UserHandle.USER_ALL);
-	 }
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.USE_SLIM_RECENTS),
+                  false, this, UserHandle.USER_ALL);
+        }
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
@@ -5357,6 +5379,9 @@ public class StatusBar extends SystemUI implements DemoMode,
                 uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_INFO)) ||
                 uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_CLOCK_SELECTION))) {
 	        updateKeyguardStatusSettings();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.USE_SLIM_RECENTS))) {
+                updateRecentsMode();
 	    }
 	    update();
         }
@@ -5375,7 +5400,8 @@ public class StatusBar extends SystemUI implements DemoMode,
 	    setUseLessBoringHeadsUp();
 	    setPulseBlacklist();
 	    updateKeyguardStatusSettings();
-	 }
+            updateRecentsMode();
+        }
     }
 
     private void updateQsPanelResources() {
@@ -5987,6 +6013,7 @@ public class StatusBar extends SystemUI implements DemoMode,
     protected Display mDisplay;
 
     protected RecentsComponent mRecents;
+    protected RecentController mSlimRecents;
 
     @ChaosLab(name="GestureAnywhere", classification=Classification.NEW_FIELD)
     protected GestureAnywhereView mGestureAnywhereView;
@@ -6668,6 +6695,31 @@ public class StatusBar extends SystemUI implements DemoMode,
         } else if (!enabled && gesturesController != null) {
             gesturesController.stop();
             gesturesController = null;
+    }
+}
+
+    private void updateRecentsMode() {
+        boolean slimRecents = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.USE_SLIM_RECENTS, 0, UserHandle.USER_CURRENT) == 1;
+        if (slimRecents) {
+            mRecents.evictAllCaches();
+            mRecents.removeSbCallbacks();
+            mSlimRecents = new RecentController(mContext);
+            rebuildRecentsScreen();
+            mSlimRecents.addSbCallbacks();
+        } else {
+            mRecents.addSbCallbacks();
+            if (mSlimRecents != null) {
+                mSlimRecents.evictAllCaches();
+                mSlimRecents.removeSbCallbacks();
+                mSlimRecents = null;
+            }
+        }
+    }
+    private void rebuildRecentsScreen() {
+        if (mSlimRecents != null) {
+            mSlimRecents.rebuildRecentsScreen();
+
         }
     }
 }
