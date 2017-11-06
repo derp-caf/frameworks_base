@@ -103,5 +103,4 @@ interface IStatusBarService
     void hideFingerprintDialog();
     void restartUI();
     void toggleCameraFlash();
-    void restartUI();
 }

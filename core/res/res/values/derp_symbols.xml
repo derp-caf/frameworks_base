@@ -45,4 +45,7 @@
   <java-symbol type="string" name="systemui_restart_title" />
   <java-symbol type="string" name="systemui_restart_message" />
 
+  <!-- System update service -->
+  <java-symbol type="array" name="config_forceEnabledComponents" />
+
 </resources>
