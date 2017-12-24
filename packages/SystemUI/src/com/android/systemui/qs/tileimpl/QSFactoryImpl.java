@@ -31,6 +31,7 @@ import com.android.systemui.qs.tiles.BatterySaverTile;
 import com.android.systemui.qs.tiles.BluetoothTile;
 import com.android.systemui.qs.tiles.CastTile;
 import com.android.systemui.qs.tiles.CellularTile;
+import com.android.systemui.qs.tiles.CPUInfoTile;
 import com.android.systemui.qs.tiles.ColorInversionTile;
 import com.android.systemui.qs.tiles.DataSaverTile;
 import com.android.systemui.qs.tiles.DndTile;
@@ -88,6 +89,7 @@ public class QSFactoryImpl implements QSFactory {
     private final Provider<SyncTile> mSyncTileProvider;
     private final Provider<HeadsUpTile> mHeadsUpTileProvider;
     private final Provider<ImmersiveTile> mImmersiveTileProvider;
+    private final Provider<CPUInfoTile> mCPUInfoTileProvider;
 
     private final Lazy<QSHost> mQsHostLazy;
 
@@ -117,7 +119,8 @@ public class QSFactoryImpl implements QSFactory {
             Provider<ScreenshotTile> screenshotTileProvider,
             Provider<SyncTile> syncTileProvider,
             Provider<HeadsUpTile> headsUpTileProvider,
-            Provider<ImmersiveTile> immersiveTileProvider) {
+            Provider<ImmersiveTile> immersiveTileProvider,
+            Provider<CPUInfoTile> cpuInfoTileProvider) {
         mQsHostLazy = qsHostLazy;
         mWifiTileProvider = wifiTileProvider;
         mBluetoothTileProvider = bluetoothTileProvider;
@@ -144,6 +147,7 @@ public class QSFactoryImpl implements QSFactory {
         mSyncTileProvider = syncTileProvider;
         mHeadsUpTileProvider = headsUpTileProvider;
         mImmersiveTileProvider = immersiveTileProvider;
+        mCPUInfoTileProvider = cpuInfoTileProvider;
     }
 
     public QSTile createTile(String tileSpec) {
@@ -205,6 +209,8 @@ public class QSFactoryImpl implements QSFactory {
                 return mHeadsUpTileProvider.get();
             case "immersive":
                 return mImmersiveTileProvider.get();
+            case "cpuinfo":
+                return mCPUInfoTileProvider.get();
         }
 
         // Custom tiles
