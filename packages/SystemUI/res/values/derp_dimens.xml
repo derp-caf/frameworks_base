@@ -56,4 +56,7 @@
     <dimen name="opa_return_translation">-1.0dip</dimen>
     <dimen name="opa_rest_to_collapse">7.0dip</dimen>
 
+    <!-- Screenrecord -->
+    <dimen name="screenrecord_hint_size">48dp</dimen>
+
 </resources>
