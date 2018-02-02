@@ -947,7 +947,7 @@ public class Build {
     public static final String FINGERPRINT = deriveFingerprint();
 
     /** @hide */
-    public static final String XTENDED_FINGERPRINT = SystemProperties.get("com.xtended.fingerprint",
+    public static final String DERPCAF_FINGERPRINT = SystemProperties.get("Derp-CAF",
             deriveFingerprint());
 
     /**
