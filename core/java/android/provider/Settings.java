@@ -5735,6 +5735,15 @@ public final class Settings {
                BOOLEAN_VALIDATOR;
 
         /**
+         * Whether to show Brightness Buttons On Brightness Slider
+         * @hide
+         */
+        public static final String QS_SHOW_BRIGHTNESS_BUTTONS = "qs_show_brightness_buttons";
+
+        /** @hide */
+        private static final Validator QS_SHOW_BRIGHTNESS_BUTTONS_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
@@ -5819,7 +5828,8 @@ public final class Settings {
             STATUS_BAR_TICKER_TICK_DURATION,
             OMNI_ASPECT_RATIO_APPS_ENABLED,
             OMNI_ASPECT_RATIO_APPS_LIST,
-            VOLUME_KEYS_CONTROL_RING_TONE
+            VOLUME_KEYS_CONTROL_RING_TONE,
+            QS_SHOW_BRIGHTNESS_BUTTONS
         };
 
         /**
@@ -5983,6 +5993,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(OMNI_ASPECT_RATIO_APPS_LIST);
             PRIVATE_SETTINGS.add(QS_HEADER_STYLE);
             PRIVATE_SETTINGS.add(VOLUME_KEYS_CONTROL_RING_TONE);
+            PRIVATE_SETTINGS.add(QS_SHOW_BRIGHTNESS_BUTTONS);
         }
 
 
@@ -6112,6 +6123,7 @@ public final class Settings {
             VALIDATORS.put(OMNI_ASPECT_RATIO_APPS_LIST,
                     OMNI_ASPECT_RATIO_APPS_LIST_VALIDATOR);
             VALIDATORS.put(VOLUME_KEYS_CONTROL_RING_TONE,VOLUME_KEYS_CONTROL_RING_TONE_VALIDATOR);
+            VALIDATORS.put(QS_SHOW_BRIGHTNESS_BUTTONS, QS_SHOW_BRIGHTNESS_BUTTONS_VALIDATOR);
         }
 
         /**
