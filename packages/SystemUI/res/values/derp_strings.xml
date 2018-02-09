@@ -236,4 +236,7 @@
     <string name="accessibility_quick_settings_navbar_changed_off">Navigation bar turned off</string>
     <string name="accessibility_quick_settings_navbar_changed_on">Navigation bar turned on</string>
 
+    <!--Google sound search tile -->
+    <string name="quick_settings_sound_search">Sound Search</string>
+
 </resources>
