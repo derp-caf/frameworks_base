@@ -6043,10 +6043,6 @@ public final class Settings {
             PRIVATE_SETTINGS.add(OMNI_LONG_PRESS_POWER_TORCH);
             PRIVATE_SETTINGS.add(POCKET_JUDGE);
             PRIVATE_SETTINGS.add(NOTIFICATION_SOUND_VIB_SCREEN_ON);
-            PRIVATE_SETTINGS.add(SMART_PIXELS_ENABLE);
-            PRIVATE_SETTINGS.add(SMART_PIXELS_PATTERN);
-            PRIVATE_SETTINGS.add(SMART_PIXELS_SHIFT_TIMEOUT);
-            PRIVATE_SETTINGS.add(SMART_PIXELS_ON_POWER_SAVE);
             PRIVATE_SETTINGS.add(RECENTS_COMPONENT);
             PRIVATE_SETTINGS.add(QS_TILE_STYLE);       
             PRIVATE_SETTINGS.add(QS_ROWS_PORTRAIT);
@@ -9574,6 +9570,42 @@ public final class Settings {
          */
         public static final String MANAGED_PROFILE_CONTACT_REMOTE_SEARCH =
                 "managed_profile_contact_remote_search";
+
+        /**
+         * Whether to use edge gestures to navigate.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_ENABLED = "edge_gestures_enabled";
+
+        /**
+         * Haptic feedback duration on edge gesture navigation.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_FEEDBACK_DURATION = "edge_gestures_feedback_duration";
+
+        /**
+         * Long press duration on edge gesture navigation.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_LONG_PRESS_DURATION = "edge_gestures_long_press_duration";
+
+        /**
+         * Back gesture active on this edges.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_BACK_EDGES = "edge_gestures_back_edges";
+
+        /**
+         * Back gesture active on this edges when on landscape.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_LANDSCAPE_BACK_EDGES = "edge_gestures_landscape_back_edges";
+
+        /**
+         * Activate back gestures only when Y position > than this % of screen.
+         * @hide
+         */
+        public static final String EDGE_GESTURES_BACK_SCREEN_PERCENT = "edge_gestures_back_screen_percent";
 
         /**
          * Whether or not the automatic storage manager is enabled and should run on the device.
