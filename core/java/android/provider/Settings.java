@@ -4979,6 +4979,18 @@ public final class Settings {
         public static final String QS_FOOTER_TEXT_STRING = "qs_footer_text_string";
 
         /**
+         * Whether to show QS brightness slider
+         * @hide
+         */
+        public static final String QS_SHOW_BRIGHTNESS = "qs_show_brightness";
+
+        /**
+         * Whether to show QS brightness slider on bottom
+         * @hide
+         */
+        public static final String QS_BRIGHTNESS_POSITION_BOTTOM = "qs_brightness_position_bottom";
+
+        /**
 	 ** What to show in network traffic indicator in statusbar
 	 ** @hide
 	 **/
