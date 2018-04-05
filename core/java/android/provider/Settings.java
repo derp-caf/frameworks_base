@@ -4754,7 +4754,12 @@ public final class Settings {
         };  
         public static final String ANIMATION_CONTROLS_DURATION = "animation_controls_duration";
 
-	    /**
+	/**
+	 ** @hide
+         **/
+        public static final String ANIMATION_CONTROLS_NO_OVERRIDE = "animation_no_override";
+
+	/**
          * show the membar in recents
          *  @hide
          */
