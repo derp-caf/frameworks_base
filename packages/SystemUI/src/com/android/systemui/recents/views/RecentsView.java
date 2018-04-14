@@ -1608,6 +1608,9 @@ public class RecentsView extends FrameLayout {
                      Settings.System.RECENTS_DATE_COLOR), false, this, UserHandle.USER_ALL);
              resolver.registerContentObserver(Settings.System.getUriFor(
                      Settings.System.FAB_ANIMATION_STYLE), false, this, UserHandle.USER_ALL);
+             resolver.registerContentObserver(Settings.System.getUriFor(
+                     Settings.System.RECENTS_LAYOUT_STYLE), false, this, UserHandle.USER_ALL);
+
              update();
          }
 
@@ -1618,7 +1621,7 @@ public class RecentsView extends FrameLayout {
 
          @Override
          public void onChange(boolean selfChange, Uri uri) {
-             if (uri.equals(Settings.System.getUriFor(
+            if (uri.equals(Settings.System.getUriFor(
                      Settings.System.RECENTS_ROTATE_FAB))) {
                  checkrotation();
              } else if (uri.equals(Settings.System.getUriFor(
@@ -1649,6 +1652,11 @@ public class RecentsView extends FrameLayout {
              } else if (uri.equals(Settings.System.getUriFor(
                      Settings.System.MEM_TEXT_COLOR))) {
                  checkcolors();
+             } else if (uri.equals(Settings.System.getUriFor(
+                     Settings.System.RECENTS_LAYOUT_STYLE))) {
+                try {
+                mTaskStackView.reloadOnConfigurationChange();
+                } catch (Exception e) {}
              }
              update();
          }
