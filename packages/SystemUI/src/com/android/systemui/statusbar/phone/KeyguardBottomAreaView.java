@@ -183,6 +183,9 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
     private boolean mIsPowerCameraGesture;
     private String mPreviousSource;
 
+    // omni additions
+    private boolean mShowIndicator = true;
+
     public KeyguardBottomAreaView(Context context) {
         this(context, null);
         updateCameraIconColor();
@@ -954,9 +957,12 @@ public class KeyguardBottomAreaView extends FrameLayout implements View.OnClickL
     }
 
     public void onKeyguardShowingChanged() {
+        mShowIndicator = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.HIDE_LOCKSCREEN_INDICATOR_DISPLAY, 0, UserHandle.USER_CURRENT) == 0;
         updateLeftAffordance();
         updateRightAffordance();
         inflateCameraPreview();
+        mIndicationController.setVisibleOverwrite(mShowIndicator);
     }
 
     private void setRightButton(IntentButton button) {
