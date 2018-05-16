@@ -902,8 +902,7 @@ class TaskRecord extends ConfigurationContainer implements TaskWindowContainerLi
 
     boolean returnsToHomeStack() {
         final int returnHomeFlags = FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_TASK_ON_HOME;
-        final int intentFlags = intent == null ? 0 : intent.getFlags();
-        return (intentFlags & returnHomeFlags) == returnHomeFlags;
+        return (intent.getFlags() & returnHomeFlags) == returnHomeFlags;
     }
 
     void setPrevAffiliate(TaskRecord prevAffiliate) {
