@@ -162,6 +162,9 @@ public final class SystemServer {
     // give any timezone code room without going into negative time.
     private static final long EARLIEST_SUPPORTED_TIME = 86400 * 1000;
 
+    private static final long SLOW_DISPATCH_THRESHOLD_MS = 100;
+    private static final long SLOW_DELIVERY_THRESHOLD_MS = 200;
+
     /*
      * Implementation class names. TODO: Move them to a codegen class or load
      * them from the build system somehow.
@@ -404,6 +407,8 @@ public final class SystemServer {
                 android.os.Process.THREAD_PRIORITY_FOREGROUND);
             android.os.Process.setCanSelfBackground(false);
             Looper.prepareMainLooper();
+            Looper.getMainLooper().setSlowLogThresholdMs(
+                    SLOW_DISPATCH_THRESHOLD_MS, SLOW_DELIVERY_THRESHOLD_MS);
 
             // Initialize native services.
             System.loadLibrary("android_servers");
@@ -1149,45 +1154,47 @@ public final class SystemServer {
             }
             traceEnd();
 
-            if (context.getPackageManager().hasSystemFeature(
-                        PackageManager.FEATURE_WIFI)) {
-                // Wifi Service must be started first for wifi-related services.
-                traceBeginAndSlog("StartWifi");
-                mSystemServiceManager.startService(WIFI_SERVICE_CLASS);
-                traceEnd();
-                traceBeginAndSlog("StartWifiScanning");
-                mSystemServiceManager.startService(
-                    "com.android.server.wifi.scanner.WifiScanningService");
-                traceEnd();
-            }
+            if (!mOnlyCore) {
+                if (context.getPackageManager().hasSystemFeature(
+                            PackageManager.FEATURE_WIFI)) {
+                    // Wifi Service must be started first for wifi-related services.
+                    traceBeginAndSlog("StartWifi");
+                    mSystemServiceManager.startService(WIFI_SERVICE_CLASS);
+                    traceEnd();
+                    traceBeginAndSlog("StartWifiScanning");
+                    mSystemServiceManager.startService(
+                        "com.android.server.wifi.scanner.WifiScanningService");
+                    traceEnd();
+                }
 
-            if (context.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_WIFI_RTT)) {
-                traceBeginAndSlog("StartRttService");
-                mSystemServiceManager.startService(
-                    "com.android.server.wifi.rtt.RttService");
-                traceEnd();
-            }
+                if (context.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_WIFI_RTT)) {
+                    traceBeginAndSlog("StartRttService");
+                    mSystemServiceManager.startService(
+                        "com.android.server.wifi.rtt.RttService");
+                    traceEnd();
+                }
 
-            if (context.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_WIFI_AWARE)) {
-                traceBeginAndSlog("StartWifiAware");
-                mSystemServiceManager.startService(WIFI_AWARE_SERVICE_CLASS);
-                traceEnd();
-            }
+                if (context.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_WIFI_AWARE)) {
+                    traceBeginAndSlog("StartWifiAware");
+                    mSystemServiceManager.startService(WIFI_AWARE_SERVICE_CLASS);
+                    traceEnd();
+                }
 
-            if (context.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_WIFI_DIRECT)) {
-                traceBeginAndSlog("StartWifiP2P");
-                mSystemServiceManager.startService(WIFI_P2P_SERVICE_CLASS);
-                traceEnd();
-            }
+                if (context.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_WIFI_DIRECT)) {
+                    traceBeginAndSlog("StartWifiP2P");
+                    mSystemServiceManager.startService(WIFI_P2P_SERVICE_CLASS);
+                    traceEnd();
+                }
 
-            if (context.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_LOWPAN)) {
-                traceBeginAndSlog("StartLowpan");
-                mSystemServiceManager.startService(LOWPAN_SERVICE_CLASS);
-                traceEnd();
+                if (context.getPackageManager().hasSystemFeature(
+                    PackageManager.FEATURE_LOWPAN)) {
+                    traceBeginAndSlog("StartLowpan");
+                    mSystemServiceManager.startService(LOWPAN_SERVICE_CLASS);
+                    traceEnd();
+                }
             }
 
             if (enableWigig) {

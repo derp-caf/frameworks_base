@@ -174,6 +174,12 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
     // The default screen brightness.
     private final int mScreenBrightnessDefault;
 
+    // The minimum allowed brightness while in VR.
+    private final int mScreenBrightnessForVrRangeMinimum;
+
+    // The maximum allowed brightness while in VR.
+    private final int mScreenBrightnessForVrRangeMaximum;
+
     // The default screen brightness for VR.
     private final int mScreenBrightnessForVrDefault;
 
@@ -386,6 +392,11 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
                     com.android.internal.R.integer.config_screenBrightnessSettingMaximum));
         mScreenBrightnessDefault = clampAbsoluteBrightness(resources.getInteger(
                     com.android.internal.R.integer.config_screenBrightnessSettingDefault));
+
+        mScreenBrightnessForVrRangeMinimum = clampAbsoluteBrightness(resources.getInteger(
+                    com.android.internal.R.integer.config_screenBrightnessForVrSettingMinimum));
+        mScreenBrightnessForVrRangeMaximum = clampAbsoluteBrightness(resources.getInteger(
+                    com.android.internal.R.integer.config_screenBrightnessForVrSettingMaximum));
         mScreenBrightnessForVrDefault = clampAbsoluteBrightness(resources.getInteger(
                     com.android.internal.R.integer.config_screenBrightnessForVrSettingDefault));
 
@@ -620,6 +631,9 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
 
         mContext.getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS),
+                false /*notifyForDescendants*/, mSettingsObserver, UserHandle.USER_ALL);
+        mContext.getContentResolver().registerContentObserver(
+                Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_FOR_VR),
                 false /*notifyForDescendants*/, mSettingsObserver, UserHandle.USER_ALL);
         mContext.getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.SCREEN_AUTO_BRIGHTNESS_ADJ),
@@ -866,7 +880,6 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
         if (brightness < 0) {
             brightness = clampScreenBrightness(mCurrentScreenBrightnessSetting);
         }
-
 
         // Apply dimming by at least some minimum amount when user activity
         // timeout is about to expire.
@@ -1133,6 +1146,11 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
     private void setReportedScreenState(int state) {
         Trace.traceCounter(Trace.TRACE_TAG_POWER, "ReportedScreenStateToPolicy", state);
         mReportedScreenStateToPolicy = state;
+    }
+
+    private int clampScreenBrightnessForVr(int value) {
+        return MathUtils.constrain(
+                value, mScreenBrightnessForVrRangeMinimum, mScreenBrightnessForVrRangeMaximum);
     }
 
     private int clampScreenBrightness(int value) {
@@ -1422,6 +1440,9 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
         if (userSwitch) {
             // Don't treat user switches as user initiated change.
             mCurrentScreenBrightnessSetting = mPendingScreenBrightnessSetting;
+            if (mAutomaticBrightnessController != null) {
+                mAutomaticBrightnessController.resetShortTermModel();
+            }
         }
         mPendingAutoBrightnessAdjustment = getAutoBrightnessAdjustmentSetting();
         // We don't bother with a pending variable for VR screen brightness since we just
@@ -1447,7 +1468,7 @@ final class DisplayPowerController implements AutomaticBrightnessController.Call
         final int brightness = Settings.System.getIntForUser(mContext.getContentResolver(),
                 Settings.System.SCREEN_BRIGHTNESS_FOR_VR, mScreenBrightnessForVrDefault,
                 UserHandle.USER_CURRENT);
-        return clampAbsoluteBrightness(brightness);
+        return clampScreenBrightnessForVr(brightness);
     }
 
     private void putScreenBrightnessSetting(int brightness) {

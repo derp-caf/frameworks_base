@@ -219,6 +219,9 @@ final class PendingIntentRecord extends IIntentSender.Stub {
     }
 
     public void unregisterCancelListenerLocked(IResultReceiver receiver) {
+        if (mCancelCallbacks == null) {
+            return; // Already unregistered or detached.
+        }
         mCancelCallbacks.unregister(receiver);
         if (mCancelCallbacks.getRegisteredCallbackCount() <= 0) {
             mCancelCallbacks = null;
@@ -280,6 +283,14 @@ final class PendingIntentRecord extends IIntentSender.Stub {
                 final int callingUid = Binder.getCallingUid();
                 final int callingPid = Binder.getCallingPid();
 
+                // Extract options before clearing calling identity
+                SafeActivityOptions mergedOptions = key.options;
+                if (mergedOptions == null) {
+                    mergedOptions = SafeActivityOptions.fromBundle(options);
+                } else {
+                    mergedOptions.setCallerOptions(ActivityOptions.fromBundle(options));
+                }
+
                 final long origId = Binder.clearCallingIdentity();
 
                 if (whitelistDuration != null) {
@@ -316,12 +327,10 @@ final class PendingIntentRecord extends IIntentSender.Stub {
                 switch (key.type) {
                     case ActivityManager.INTENT_SENDER_ACTIVITY:
                         try {
-                            SafeActivityOptions mergedOptions = key.options;
-                            if (mergedOptions == null) {
-                                mergedOptions = SafeActivityOptions.fromBundle(options);
-                            } else {
-                                mergedOptions.setCallerOptions(ActivityOptions.fromBundle(options));
-                            }
+                            // Note when someone has a pending intent, even from different
+                            // users, then there's no need to ensure the calling user matches
+                            // the target user, so validateIncomingUser is always false below.
+
                             if (key.allIntents != null && key.allIntents.length > 1) {
                                 Intent[] allIntents = new Intent[key.allIntents.length];
                                 String[] allResolvedTypes = new String[key.allIntents.length];
@@ -333,15 +342,17 @@ final class PendingIntentRecord extends IIntentSender.Stub {
                                 }
                                 allIntents[allIntents.length-1] = finalIntent;
                                 allResolvedTypes[allResolvedTypes.length-1] = resolvedType;
+
                                 res = owner.getActivityStartController().startActivitiesInPackage(
                                         uid, key.packageName, allIntents, allResolvedTypes,
                                         resultTo, mergedOptions, userId,
-                                        true /* validateIncomingUser */);
+                                        false /* validateIncomingUser */);
                             } else {
                                 res = owner.getActivityStartController().startActivityInPackage(uid,
                                         callingPid, callingUid, key.packageName, finalIntent,
                                         resolvedType, resultTo, resultWho, requestCode, 0,
-                                        mergedOptions, userId, null, "PendingIntentRecord");
+                                        mergedOptions, userId, null, "PendingIntentRecord",
+                                        false /* validateIncomingUser */);
                             }
                         } catch (RuntimeException e) {
                             Slog.w(TAG, "Unable to send startActivity intent", e);

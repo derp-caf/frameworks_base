@@ -212,16 +212,6 @@ final class OverlayManagerServiceImpl {
         }
     }
 
-    void onTargetPackageChanged(@NonNull final String packageName, final int userId) {
-        if (DEBUG) {
-            Slog.d(TAG, "onTargetPackageChanged packageName=" + packageName + " userId=" + userId);
-        }
-
-        if (updateAllOverlaysForTarget(packageName, userId, 0)) {
-            mListener.onOverlaysChanged(packageName, userId);
-        }
-    }
-
     void onTargetPackageUpgrading(@NonNull final String packageName, final int userId) {
         if (DEBUG) {
             Slog.d(TAG, "onTargetPackageUpgrading packageName=" + packageName + " userId="
@@ -254,7 +244,11 @@ final class OverlayManagerServiceImpl {
     }
 
     /**
-     * Returns true if the settings were modified for this target.
+     * Update the state of any overlays for this target.
+     *
+     * Returns true if the system should refresh the app's overlay paths (i.e.
+     * if the settings were modified for this target, or there is at least one
+     * enabled framework overlay).
      */
     private boolean updateAllOverlaysForTarget(@NonNull final String targetPackageName,
             final int userId, final int flags) {
@@ -277,6 +271,10 @@ final class OverlayManagerServiceImpl {
                 }
             }
         }
+
+        // check for enabled framework overlays
+        modified = modified || !getEnabledOverlayPackageNames("android", userId).isEmpty();
+
         return modified;
     }
 

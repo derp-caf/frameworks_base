@@ -53,6 +53,7 @@ TaskManager* SkiaPipeline::getTaskManager() {
 }
 
 void SkiaPipeline::onDestroyHardwareResources() {
+    unpinImages();
     mRenderThread.cacheManager().trimStaleResources();
 }
 
@@ -146,6 +147,7 @@ void SkiaPipeline::renderLayersImpl(const LayerUpdateQueue& layers, bool opaque,
             GrContext* currentContext = layerNode->getLayerSurface()->getCanvas()->getGrContext();
             if (cachedContext.get() != currentContext) {
                 if (cachedContext.get()) {
+                    ATRACE_NAME("flush layers (context changed)");
                     cachedContext->flush();
                 }
                 cachedContext.reset(SkSafeRef(currentContext));
@@ -154,6 +156,7 @@ void SkiaPipeline::renderLayersImpl(const LayerUpdateQueue& layers, bool opaque,
     }
 
     if (cachedContext.get()) {
+        ATRACE_NAME("flush layers");
         cachedContext->flush();
     }
 }

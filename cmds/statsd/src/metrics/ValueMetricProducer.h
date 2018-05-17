@@ -88,7 +88,9 @@ protected:
 private:
     void onDumpReportLocked(const int64_t dumpTimeNs,
                             const bool include_current_partial_bucket,
+                            std::set<string> *str_set,
                             android::util::ProtoOutputStream* protoOutput) override;
+    void clearPastBucketsLocked(const int64_t dumpTimeNs) override;
 
     // Internal interface to handle condition change.
     void onConditionChangedLocked(const bool conditionMet, const int64_t eventTime) override;
@@ -147,6 +149,11 @@ private:
     // Save the past buckets and we can clear when the StatsLogReport is dumped.
     // TODO: Add a lock to mPastBuckets.
     std::unordered_map<MetricDimensionKey, std::vector<ValueBucket>> mPastBuckets;
+
+    // Pairs of (elapsed start, elapsed end) denoting buckets that were skipped.
+    std::list<std::pair<int64_t, int64_t>> mSkippedBuckets;
+
+    const int64_t mMinBucketSizeNs;
 
     // Util function to check whether the specified dimension hits the guardrail.
     bool hitGuardRailLocked(const MetricDimensionKey& newKey);

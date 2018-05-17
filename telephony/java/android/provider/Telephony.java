@@ -310,6 +310,7 @@ public final class Telephony {
          * @hide
          */
         public static Cursor query(ContentResolver cr, String[] projection) {
+            android.util.SeempLog.record(10);
             return cr.query(CONTENT_URI, projection, null, null, DEFAULT_SORT_ORDER);
         }
 
@@ -319,6 +320,7 @@ public final class Telephony {
          */
         public static Cursor query(ContentResolver cr, String[] projection,
                 String where, String orderBy) {
+            android.util.SeempLog.record(10);
             return cr.query(CONTENT_URI, projection, where,
                     null, orderBy == null ? DEFAULT_SORT_ORDER : orderBy);
         }
@@ -2062,6 +2064,7 @@ public final class Telephony {
          */
         public static Cursor query(
                 ContentResolver cr, String[] projection) {
+            android.util.SeempLog.record(10);
             return cr.query(CONTENT_URI, projection, null, null, DEFAULT_SORT_ORDER);
         }
 
@@ -2072,6 +2075,7 @@ public final class Telephony {
         public static Cursor query(
                 ContentResolver cr, String[] projection,
                 String where, String orderBy) {
+            android.util.SeempLog.record(10);
             return cr.query(CONTENT_URI, projection,
                     where, null, orderBy == null ? DEFAULT_SORT_ORDER : orderBy);
         }
@@ -2947,12 +2951,30 @@ public final class Telephony {
          * @hide
          */
         public static final int OWNED_BY_DPC = 0;
+
         /**
          * Possible value for the OWNED_BY field.
          * APN is owned by other sources.
          * @hide
          */
         public static final int OWNED_BY_OTHERS = 1;
+
+        /**
+         * The APN set id. When the user manually selects an APN or the framework sets an APN as
+         * preferred, all APNs with the same set id as the selected APN should be prioritized over
+         * APNs in other sets.
+         * @hide
+         */
+        public static final String APN_SET_ID = "apn_set_id";
+
+        /**
+         * Possible value for the APN_SET_ID field. By default APNs will not belong to a set. If the
+         * user manually selects an APN with no set set, there is no need to prioritize any specific
+         * APN set ids.
+         * @hide
+         */
+        public static final int NO_SET_SET = 0;
+
     }
 
     /**

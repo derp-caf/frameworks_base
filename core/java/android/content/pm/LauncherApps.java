@@ -229,7 +229,7 @@ public class LauncherApps {
          * <p>A suspending app with the permission {@code android.permission.SUSPEND_APPS} can
          * optionally provide a {@link Bundle} of extra information that it deems helpful for the
          * launcher to handle the suspended state of these packages. The contents of this
-         * {@link Bundle} supposed to be a contract between the suspending app and the launcher.
+         * {@link Bundle} are supposed to be a contract between the suspending app and the launcher.
          *
          * @param packageNames The names of the packages that have just been suspended.
          * @param user the user for which the given packages were suspended.
@@ -548,7 +548,8 @@ public class LauncherApps {
             Log.i(TAG, "StartMainActivity " + component + " " + user.getIdentifier());
         }
         try {
-            mService.startActivityAsUser(mContext.getPackageName(),
+            mService.startActivityAsUser(mContext.getIApplicationThread(),
+                    mContext.getPackageName(),
                     component, sourceBounds, opts, user);
         } catch (RemoteException re) {
             throw re.rethrowFromSystemServer();
@@ -568,7 +569,8 @@ public class LauncherApps {
             Rect sourceBounds, Bundle opts) {
         logErrorForInvalidProfileAccess(user);
         try {
-            mService.showAppDetailsAsUser(mContext.getPackageName(),
+            mService.showAppDetailsAsUser(mContext.getIApplicationThread(),
+                    mContext.getPackageName(),
                     component, sourceBounds, opts, user);
         } catch (RemoteException re) {
             throw re.rethrowFromSystemServer();

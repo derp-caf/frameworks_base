@@ -2935,7 +2935,7 @@ public class SettingsProvider extends ContentProvider {
         }
 
         private final class UpgradeController {
-            private static final int SETTINGS_VERSION = 163;
+            private static final int SETTINGS_VERSION = 165;
 
             private final int mUserId;
 
@@ -3710,7 +3710,30 @@ public class SettingsProvider extends ContentProvider {
                 }
 
                 if (currentVersion == 162) {
-                    // Version 162: Add a gesture for silencing phones
+                    // Version 162: REMOVED: Add a gesture for silencing phones
+                    currentVersion = 163;
+                }
+
+                if (currentVersion == 163) {
+                    // Version 163: Update default value of
+                    // MAX_SOUND_TRIGGER_DETECTION_SERVICE_OPS_PER_DAY from old to new default
+                    final SettingsState settings = getGlobalSettingsLocked();
+                    final Setting currentSetting = settings.getSettingLocked(
+                            Global.MAX_SOUND_TRIGGER_DETECTION_SERVICE_OPS_PER_DAY);
+                    if (currentSetting.isDefaultFromSystem()) {
+                        settings.insertSettingLocked(
+                                Settings.Global.MAX_SOUND_TRIGGER_DETECTION_SERVICE_OPS_PER_DAY,
+                                Integer.toString(getContext().getResources().getInteger(
+                                        R.integer
+                                        .def_max_sound_trigger_detection_service_ops_per_day)),
+                                null, true, SettingsState.SYSTEM_PACKAGE_NAME);
+                    }
+
+                    currentVersion = 164;
+                }
+
+                if (currentVersion == 164) {
+                    // Version 164: Add a gesture for silencing phones
                     final SettingsState settings = getGlobalSettingsLocked();
                     final Setting currentSetting = settings.getSettingLocked(
                             Global.SHOW_ZEN_UPGRADE_NOTIFICATION);
@@ -3721,7 +3744,7 @@ public class SettingsProvider extends ContentProvider {
                                 null, true, SettingsState.SYSTEM_PACKAGE_NAME);
                     }
 
-                    currentVersion = 163;
+                    currentVersion = 165;
                 }
 
                 // vXXX: Add new settings above this point.

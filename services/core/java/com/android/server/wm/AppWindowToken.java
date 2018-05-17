@@ -913,12 +913,16 @@ class AppWindowToken extends WindowToken implements WindowManagerService.AppFree
         // try and clean up it's child surfaces. We need to prevent this from
         // happening, so we sever the children, transfering their ownership
         // from the client it-self to the parent surface (owned by us).
+        detachChildren();
+
+        mPendingRelaunchCount++;
+    }
+
+    void detachChildren() {
         for (int i = mChildren.size() - 1; i >= 0; i--) {
             final WindowState w = mChildren.get(i);
             w.mWinAnimator.detachChildren();
         }
-
-        mPendingRelaunchCount++;
     }
 
     void finishRelaunching() {
@@ -1662,7 +1666,9 @@ class AppWindowToken extends WindowToken implements WindowManagerService.AppFree
     }
 
     SurfaceControl getAppAnimationLayer() {
-        return getAppAnimationLayer(needsZBoost());
+        return getAppAnimationLayer(isActivityTypeHome() ? ANIMATION_LAYER_HOME
+                : needsZBoost() ? ANIMATION_LAYER_BOOSTED
+                : ANIMATION_LAYER_STANDARD);
     }
 
     @Override
@@ -1982,7 +1988,7 @@ class AppWindowToken extends WindowToken implements WindowManagerService.AppFree
         final Rect frame = win.mFrame;
         final int thumbnailDrawableRes = getTask().mUserId == mService.mCurrentUserId
                 ? R.drawable.ic_account_circle
-                : R.drawable.ic_corp_badge_no_background;
+                : R.drawable.ic_corp_badge;
         final GraphicBuffer thumbnail =
                 mService.mAppTransition
                         .createCrossProfileAppsThumbnail(thumbnailDrawableRes, frame);

@@ -143,9 +143,18 @@ TEST_F(SectionTest, FileSection) {
     EXPECT_THAT(GetCapturedStdout(), StrEq("\xa\vatadtsetmai"));
 }
 
+TEST_F(SectionTest, FileSectionNotExist) {
+    FileSection fs1(NOOP_PARSER, "notexist", false, QUICK_TIMEOUT_MS);
+    ASSERT_EQ(NAME_NOT_FOUND, fs1.Execute(&requests));
+
+    FileSection fs2(NOOP_PARSER, "notexist", true, QUICK_TIMEOUT_MS);
+    ASSERT_EQ(NO_ERROR, fs2.Execute(&requests));
+}
+
 TEST_F(SectionTest, FileSectionTimeout) {
-    FileSection fs(TIMEOUT_PARSER, tf.path, QUICK_TIMEOUT_MS);
+    FileSection fs(TIMEOUT_PARSER, tf.path, false, QUICK_TIMEOUT_MS);
     ASSERT_EQ(NO_ERROR, fs.Execute(&requests));
+    ASSERT_TRUE(requests.sectionStats(TIMEOUT_PARSER)->timed_out());
 }
 
 TEST_F(SectionTest, GZipSection) {
@@ -204,12 +213,14 @@ TEST_F(SectionTest, CommandSectionEcho) {
 TEST_F(SectionTest, CommandSectionCommandTimeout) {
     CommandSection cs(NOOP_PARSER, QUICK_TIMEOUT_MS, "/system/bin/yes", NULL);
     ASSERT_EQ(NO_ERROR, cs.Execute(&requests));
+    ASSERT_TRUE(requests.sectionStats(NOOP_PARSER)->timed_out());
 }
 
 TEST_F(SectionTest, CommandSectionIncidentHelperTimeout) {
     CommandSection cs(TIMEOUT_PARSER, QUICK_TIMEOUT_MS, "/system/bin/echo", "about", NULL);
     requests.setMainFd(STDOUT_FILENO);
     ASSERT_EQ(NO_ERROR, cs.Execute(&requests));
+    ASSERT_TRUE(requests.sectionStats(TIMEOUT_PARSER)->timed_out());
 }
 
 TEST_F(SectionTest, CommandSectionBadCommand) {
@@ -221,6 +232,7 @@ TEST_F(SectionTest, CommandSectionBadCommandAndTimeout) {
     CommandSection cs(TIMEOUT_PARSER, QUICK_TIMEOUT_MS, "nonexistcommand", "-opt", NULL);
     // timeout will return first
     ASSERT_EQ(NO_ERROR, cs.Execute(&requests));
+    ASSERT_TRUE(requests.sectionStats(TIMEOUT_PARSER)->timed_out());
 }
 
 TEST_F(SectionTest, LogSectionBinary) {

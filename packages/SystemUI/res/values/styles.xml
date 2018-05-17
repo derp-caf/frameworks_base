@@ -137,7 +137,8 @@
         <item name="android:layout_marginTop">4dp</item>
     </style>
 
-    <style name="hybrid_notification_text">
+    <style name="hybrid_notification_text"
+           parent="@*android:style/Widget.Material.Notification.Text">
         <item name="android:paddingEnd">4dp</item>
     </style>
 
@@ -173,7 +174,7 @@
     <style name="TextAppearance.StatusBar.Expanded.Date">
         <item name="android:textSize">@dimen/qs_time_expanded_size</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">#ffffffff</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>
 
@@ -360,10 +361,6 @@
         parent="@*android:style/TextAppearance.Material.Notification.Info">
     </style>
 
-    <style name="TextAppearance.Material.Notification.HybridNotificationDivider"
-        parent="@*android:style/TextAppearance.Material.Notification">
-    </style>
-
     <style name="SearchPanelCircle">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
@@ -486,8 +483,10 @@
         <item name="android:background">@drawable/btn_borderless_rect</item>
         <item name="android:gravity">center</item>
         <item name="android:focusable">true</item>
-        <item name="android:paddingStart">8dp</item>
-        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">@dimen/notification_guts_button_vertical_padding</item>
+        <item name="android:paddingBottom">@dimen/notification_guts_button_vertical_padding</item>
+        <item name="android:paddingLeft">@dimen/notification_guts_button_horizontal_padding</item>
+        <item name="android:paddingRight">@dimen/notification_guts_button_horizontal_padding</item>
     </style>
 
     <style name="TextAppearance.HeadsUpStatusBarText"

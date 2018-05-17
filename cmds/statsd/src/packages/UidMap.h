@@ -59,11 +59,11 @@ struct ChangeRecord {
     const int64_t timestampNs;
     const string package;
     const int32_t uid;
-    const int32_t version;
-    const int32_t prevVersion;
+    const int64_t version;
+    const int64_t prevVersion;
 
     ChangeRecord(const bool isDeletion, const int64_t timestampNs, const string& package,
-                 const int32_t uid, const int32_t version, const int32_t prevVersion)
+                 const int32_t uid, const int64_t version, const int64_t prevVersion)
         : deletion(isDeletion),
           timestampNs(timestampNs),
           package(package),
@@ -128,7 +128,7 @@ public:
     // If every config key has received a change or snapshot record, then this
     // record is deleted.
     void appendUidMap(const int64_t& timestamp, const ConfigKey& key,
-                      util::ProtoOutputStream* proto);
+                      std::set<string> *str_set, util::ProtoOutputStream* proto);
 
     // Forces the output to be cleared. We still generate a snapshot based on the current state.
     // This results in extra data uploaded but helps us reconstruct the uid mapping on the server

@@ -70,6 +70,13 @@ static status_t write_section_header(int fd, int sectionId, size_t size) {
     return WriteFully(fd, buf, p - buf) ? NO_ERROR : -errno;
 }
 
+static void write_section_stats(IncidentMetadata::SectionStats* stats, const FdBuffer& buffer) {
+    stats->set_dump_size_bytes(buffer.data().size());
+    stats->set_dump_duration_ms(buffer.durationMs());
+    stats->set_timed_out(buffer.timedOut());
+    stats->set_is_truncated(buffer.truncated());
+}
+
 // Reads data from FdBuffer and writes it to the requests file descriptor.
 static status_t write_report_requests(const int id, const FdBuffer& buffer,
                                       ReportRequestSet* requests) {
@@ -77,12 +84,6 @@ static status_t write_report_requests(const int id, const FdBuffer& buffer,
     EncodedBuffer::iterator data = buffer.data();
     PrivacyBuffer privacyBuffer(get_privacy_of_section(id), data);
     int writeable = 0;
-    IncidentMetadata::SectionStats* stats = requests->sectionStats(id);
-
-    stats->set_dump_size_bytes(data.size());
-    stats->set_dump_duration_ms(buffer.durationMs());
-    stats->set_timed_out(buffer.timedOut());
-    stats->set_is_truncated(buffer.truncated());
 
     // The streaming ones, group requests by spec in order to save unnecessary strip operations
     map<PrivacySpec, vector<sp<ReportRequest>>> requestsBySpec;
@@ -140,7 +141,8 @@ static status_t write_report_requests(const int id, const FdBuffer& buffer,
         writeable++;
         VLOG("Section %d flushed %zu bytes to dropbox %d with spec %d", id, privacyBuffer.size(),
              requests->mainFd(), spec.dest);
-        stats->set_report_size_bytes(privacyBuffer.size());
+        // Reports bytes of the section uploaded via dropbox after filtering.
+        requests->sectionStats(id)->set_report_size_bytes(privacyBuffer.size());
     }
 
 DONE:
@@ -149,7 +151,8 @@ DONE:
 }
 
 // ================================================================================
-Section::Section(int i, const int64_t timeoutMs) : id(i), timeoutMs(timeoutMs) {}
+Section::Section(int i, int64_t timeoutMs, bool deviceSpecific)
+    : id(i), timeoutMs(timeoutMs), deviceSpecific(deviceSpecific) {}
 
 Section::~Section() {}
 
@@ -234,8 +237,9 @@ status_t MetadataSection::Execute(ReportRequestSet* requests) const {
 // ================================================================================
 static inline bool isSysfs(const char* filename) { return strncmp(filename, "/sys/", 5) == 0; }
 
-FileSection::FileSection(int id, const char* filename, const int64_t timeoutMs)
-    : Section(id, timeoutMs), mFilename(filename) {
+FileSection::FileSection(int id, const char* filename, const bool deviceSpecific,
+                         const int64_t timeoutMs)
+    : Section(id, timeoutMs, deviceSpecific), mFilename(filename) {
     name = filename;
     mIsSysfs = isSysfs(filename);
 }
@@ -248,7 +252,7 @@ status_t FileSection::Execute(ReportRequestSet* requests) const {
     unique_fd fd(open(mFilename, O_RDONLY | O_CLOEXEC));
     if (fd.get() == -1) {
         ALOGW("FileSection '%s' failed to open file", this->name.string());
-        return -errno;
+        return this->deviceSpecific ? NO_ERROR : -errno;
     }
 
     FdBuffer buffer;
@@ -270,7 +274,7 @@ status_t FileSection::Execute(ReportRequestSet* requests) const {
     status_t readStatus = buffer.readProcessedDataInStream(fd.get(), std::move(p2cPipe.writeFd()),
                                                            std::move(c2pPipe.readFd()),
                                                            this->timeoutMs, mIsSysfs);
-
+    write_section_stats(requests->sectionStats(this->id), buffer);
     if (readStatus != NO_ERROR || buffer.timedOut()) {
         ALOGW("FileSection '%s' failed to read data from incident helper: %s, timedout: %s",
               this->name.string(), strerror(-readStatus), buffer.timedOut() ? "true" : "false");
@@ -308,7 +312,7 @@ GZipSection::GZipSection(int id, const char* filename, ...) : Section(id) {
     }
 }
 
-GZipSection::~GZipSection() {}
+GZipSection::~GZipSection() { free(mFilenames); }
 
 status_t GZipSection::Execute(ReportRequestSet* requests) const {
     // Reads the files in order, use the first available one.
@@ -363,7 +367,7 @@ status_t GZipSection::Execute(ReportRequestSet* requests) const {
     status_t readStatus = buffer.readProcessedDataInStream(
             fd.get(), std::move(p2cPipe.writeFd()), std::move(c2pPipe.readFd()), this->timeoutMs,
             isSysfs(mFilenames[index]));
-
+    write_section_stats(requests->sectionStats(this->id), buffer);
     if (readStatus != NO_ERROR || buffer.timedOut()) {
         ALOGW("GZipSection '%s' failed to read data from gzip: %s, timedout: %s",
               this->name.string(), strerror(-readStatus), buffer.timedOut() ? "true" : "false");
@@ -499,7 +503,7 @@ status_t WorkerThreadSection::Execute(ReportRequestSet* requests) const {
             }
         }
     }
-
+    write_section_stats(requests->sectionStats(this->id), buffer);
     if (timedOut || buffer.timedOut()) {
         ALOGW("WorkerThreadSection '%s' timed out", this->name.string());
         return NO_ERROR;
@@ -580,6 +584,7 @@ status_t CommandSection::Execute(ReportRequestSet* requests) const {
 
     cmdPipe.writeFd().reset();
     status_t readStatus = buffer.read(ihPipe.readFd().get(), this->timeoutMs);
+    write_section_stats(requests->sectionStats(this->id), buffer);
     if (readStatus != NO_ERROR || buffer.timedOut()) {
         ALOGW("CommandSection '%s' failed to read data from incident helper: %s, timedout: %s",
               this->name.string(), strerror(-readStatus), buffer.timedOut() ? "true" : "false");
@@ -899,10 +904,15 @@ status_t TombstoneSection::BlockingCall(int pipeWriteFd) const {
         // Read from the pipe concurrently to avoid blocking the child.
         FdBuffer buffer;
         err = buffer.readFully(dumpPipe.readFd().get());
+        // Wait on the child to avoid it becoming a zombie process.
+        status_t cStatus = wait_child(child);
         if (err != NO_ERROR) {
             ALOGW("TombstoneSection '%s' failed to read stack dump: %d", this->name.string(), err);
             dumpPipe.readFd().reset();
             break;
+        }
+        if (cStatus != NO_ERROR) {
+            ALOGE("TombstoneSection '%s' child had an issue: %s\n", this->name.string(), strerror(-cStatus));
         }
 
         auto dump = std::make_unique<char[]>(buffer.size());

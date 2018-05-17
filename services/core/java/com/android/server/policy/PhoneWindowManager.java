@@ -235,6 +235,7 @@ import android.util.SparseArray;
 import android.util.proto.ProtoOutputStream;
 import android.view.Display;
 import android.view.DisplayCutout;
+import android.view.DisplayInfo;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.IApplicationToken;
@@ -2594,6 +2595,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+            lp.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
             if (ActivityManager.isHighEndGfx()) {
                 lp.flags |= WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
                 lp.privateFlags |=
@@ -4852,6 +4854,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         // For layout, the status bar is always at the top with our fixed height.
         displayFrames.mStable.top = displayFrames.mUnrestricted.top
                 + mStatusBarHeightForRotation[displayFrames.mRotation];
+        // Make sure the status bar covers the entire cutout height
+        displayFrames.mStable.top = Math.max(displayFrames.mStable.top,
+                displayFrames.mDisplayCutoutSafe.top);
 
         // Tell the bar controller where the collapsed status bar content is
         mTmpRect.set(mStatusBar.getContentFrameLw());
@@ -6131,6 +6136,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 && (!isNavBarVirtKey || mNavBarVirtualKeyHapticFeedbackEnabled)
                 && event.getRepeatCount() == 0;
 
+        // Cancel any pending remote recents animations before handling the button itself. In the
+        // case where we are going home and the recents animation has already started, just cancel
+        // the recents animation, leaving the home stack in place for the pending start activity
+        if (isNavBarVirtKey && !down && !canceled) {
+            boolean isHomeKey = keyCode == KeyEvent.KEYCODE_HOME;
+            mActivityManagerInternal.cancelRecentsAnimation(!isHomeKey);
+        }
+
         // Handle special keys.
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK: {
@@ -7241,14 +7254,35 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     @Override
-    public boolean isDockSideAllowed(int dockSide) {
+    public boolean isDockSideAllowed(int dockSide, int originalDockSide, int displayWidth,
+            int displayHeight, int displayRotation) {
+        final int barPosition = navigationBarPosition(displayWidth, displayHeight, displayRotation);
+        return isDockSideAllowed(dockSide, originalDockSide, barPosition, mNavigationBarCanMove);
+    }
 
-        // We do not allow all dock sides at which the navigation bar touches the docked stack.
-        if (!mNavigationBarCanMove) {
-            return dockSide == DOCKED_TOP || dockSide == DOCKED_LEFT || dockSide == DOCKED_RIGHT;
-        } else {
-            return dockSide == DOCKED_TOP || dockSide == DOCKED_LEFT;
+    @VisibleForTesting
+    static boolean isDockSideAllowed(int dockSide, int originalDockSide,
+            int navBarPosition, boolean navigationBarCanMove) {
+        if (dockSide == DOCKED_TOP) {
+            return true;
         }
+
+        if (navigationBarCanMove) {
+            // Only allow the dockside opposite to the nav bar position in landscape
+            return dockSide == DOCKED_LEFT && navBarPosition == NAV_BAR_RIGHT
+                    || dockSide == DOCKED_RIGHT && navBarPosition == NAV_BAR_LEFT;
+        }
+
+        // Side is the same as original side
+        if (dockSide == originalDockSide) {
+            return true;
+        }
+
+        // Only if original docked side was top in portrait will allow left for landscape
+        if (dockSide == DOCKED_LEFT && originalDockSide == DOCKED_TOP) {
+            return true;
+        }
+        return false;
     }
 
     void sendCloseSystemWindows() {

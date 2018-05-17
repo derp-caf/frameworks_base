@@ -86,6 +86,7 @@ import android.util.MemoryIntArray;
 import android.view.textservice.TextServicesManager;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.app.ColorDisplayController;
 import com.android.internal.widget.ILockSettings;
 
 import java.io.IOException;
@@ -140,6 +141,22 @@ public final class Settings {
     @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
     public static final String ACTION_LOCATION_SOURCE_SETTINGS =
             "android.settings.LOCATION_SOURCE_SETTINGS";
+
+    /**
+     * Activity Action: Show scanning settings to allow configuration of Wi-Fi
+     * and Bluetooth scanning settings.
+     * <p>
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
+     * <p>
+     * Input: Nothing.
+     * <p>
+     * Output: Nothing.
+     * @hide
+     */
+    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
+    public static final String ACTION_LOCATION_SCANNING_SETTINGS =
+            "android.settings.LOCATION_SCANNING_SETTINGS";
 
     /**
      * Activity Action: Show settings to allow configuration of users.
@@ -1768,6 +1785,12 @@ public final class Settings {
     public static final int USER_SETUP_PERSONALIZATION_STARTED = 1;
 
     /**
+     * User has snoozed personalization and will complete it later.
+     * @hide
+     */
+    public static final int USER_SETUP_PERSONALIZATION_PAUSED = 2;
+
+    /**
      * User has completed setup personalization.
      * @hide
      */
@@ -1778,6 +1801,7 @@ public final class Settings {
     @IntDef({
             USER_SETUP_PERSONALIZATION_NOT_STARTED,
             USER_SETUP_PERSONALIZATION_STARTED,
+            USER_SETUP_PERSONALIZATION_PAUSED,
             USER_SETUP_PERSONALIZATION_COMPLETE
     })
     public @interface UserSetupPersonalization {}
@@ -2339,6 +2363,7 @@ public final class Settings {
         /** @hide */
         public static String getStringForUser(ContentResolver resolver, String name,
                 int userHandle) {
+            android.util.SeempLog.record(android.util.SeempLog.getSeempGetApiIdFromValue(name));
             if (MOVED_TO_SECURE.contains(name)) {
                 Log.w(TAG, "Setting " + name + " has moved from android.provider.Settings.System"
                         + " to android.provider.Settings.Secure, returning read-only value.");
@@ -2366,6 +2391,7 @@ public final class Settings {
         /** @hide */
         public static boolean putStringForUser(ContentResolver resolver, String name, String value,
                 int userHandle) {
+            android.util.SeempLog.record(android.util.SeempLog.getSeempPutApiIdFromValue(name));
             if (MOVED_TO_SECURE.contains(name)) {
                 Log.w(TAG, "Setting " + name + " has moved from android.provider.Settings.System"
                         + " to android.provider.Settings.Secure, value is unchanged.");
@@ -3131,7 +3157,9 @@ public final class Settings {
         public static final String DISPLAY_COLOR_MODE = "display_color_mode";
 
         private static final Validator DISPLAY_COLOR_MODE_VALIDATOR =
-                new SettingsValidators.InclusiveIntegerRangeValidator(0, 2);
+                new SettingsValidators.InclusiveIntegerRangeValidator(
+                        ColorDisplayController.COLOR_MODE_NATURAL,
+                        ColorDisplayController.COLOR_MODE_AUTOMATIC);
 
         /**
          * The amount of time in milliseconds before the device goes to sleep or begins
@@ -8744,6 +8772,17 @@ public final class Settings {
         public static final String EUICC_PROVISIONED = "euicc_provisioned";
 
         /**
+         * List of ISO country codes in which eUICC UI is shown. Country codes should be separated
+         * by comma.
+         *
+         * <p>Used to hide eUICC UI from users who are currently in countries no carriers support
+         * eUICC.
+         * @hide
+         */
+        //TODO(b/77914569) Changes this to System Api.
+        public static final String EUICC_SUPPORTED_COUNTRIES = "euicc_supported_countries";
+
+        /**
          * Whether any activity can be resized. When this is true, any
          * activity, regardless of manifest values, can be resized for multi-window.
          * (0 = false, 1 = true)
@@ -10574,18 +10613,30 @@ public final class Settings {
          * App standby (app idle) specific settings.
          * This is encoded as a key=value list, separated by commas. Ex:
          * <p>
-         * "idle_duration=5000,parole_interval=4500"
+         * "idle_duration=5000,parole_interval=4500,screen_thresholds=0/0/60000/120000"
          * <p>
          * All durations are in millis.
+         * Array values are separated by forward slashes
          * The following keys are supported:
          *
          * <pre>
-         * idle_duration2       (long)
-         * wallclock_threshold  (long)
-         * parole_interval      (long)
-         * parole_duration      (long)
+         * parole_interval                  (long)
+         * parole_window                    (long)
+         * parole_duration                  (long)
+         * screen_thresholds                (long[4])
+         * elapsed_thresholds               (long[4])
+         * strong_usage_duration            (long)
+         * notification_seen_duration       (long)
+         * system_update_usage_duration     (long)
+         * prediction_timeout               (long)
+         * sync_adapter_duration            (long)
+         * exempted_sync_duration           (long)
+         * system_interaction_duration      (long)
+         * stable_charging_threshold        (long)
          *
          * idle_duration        (long) // This is deprecated and used to circumvent b/26355386.
+         * idle_duration2       (long) // deprecated
+         * wallclock_threshold  (long) // deprecated
          * </pre>
          *
          * <p>
@@ -10748,6 +10799,8 @@ public final class Settings {
          * track_cpu_active_cluster_time (boolean)
          * read_binary_cpu_time          (boolean)
          * proc_state_cpu_times_read_delay_ms (long)
+         * external_stats_collection_rate_limit_ms (long)
+         * battery_level_collection_delay_ms (long)
          * </pre>
          *
          * <p>
@@ -10768,13 +10821,26 @@ public final class Settings {
         public static final String SYNC_MANAGER_CONSTANTS = "sync_manager_constants";
 
         /**
-         * Whether or not App Standby feature is enabled. This controls throttling of apps
-         * based on usage patterns and predictions.
+         * Whether or not App Standby feature is enabled by system. This controls throttling of apps
+         * based on usage patterns and predictions. Platform will turn on this feature if both this
+         * flag and {@link #ADAPTIVE_BATTERY_MANAGEMENT_ENABLED} is on.
          * Type: int (0 for false, 1 for true)
          * Default: 1
          * @hide
+         * @see #ADAPTIVE_BATTERY_MANAGEMENT_ENABLED
          */
         public static final String APP_STANDBY_ENABLED = "app_standby_enabled";
+
+        /**
+         * Whether or not adaptive battery feature is enabled by user. Platform will turn on this
+         * feature if both this flag and {@link #APP_STANDBY_ENABLED} is on.
+         * Type: int (0 for false, 1 for true)
+         * Default: 1
+         * @hide
+         * @see #APP_STANDBY_ENABLED
+         */
+        public static final String ADAPTIVE_BATTERY_MANAGEMENT_ENABLED =
+                "adaptive_battery_management_enabled";
 
         /**
          * Whether or not app auto restriction is enabled. When it is enabled, settings app will
@@ -12649,6 +12715,18 @@ public final class Settings {
          * @hide
          */
         public static final String GNSS_SATELLITE_BLACKLIST = "gnss_satellite_blacklist";
+
+        /**
+         * Duration of updates in millisecond for GNSS location request from HAL to framework.
+         *
+         * If zero, the GNSS location request feature is disabled.
+         *
+         * The value is a non-negative long.
+         *
+         * @hide
+         */
+        public static final String GNSS_HAL_LOCATION_REQUEST_DURATION_MILLIS =
+                "gnss_hal_location_request_duration_millis";
     }
 
     /**

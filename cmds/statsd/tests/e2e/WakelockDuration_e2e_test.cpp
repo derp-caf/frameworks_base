@@ -127,9 +127,13 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForSumDuration1) 
     FeedEvents(config, processor);
     vector<uint8_t> buffer;
     ConfigMetricsReportList reports;
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs - 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs - 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
 
     EXPECT_EQ(reports.reports_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics_size(), 1);
@@ -160,10 +164,13 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForSumDuration2) 
     FeedEvents(config, processor);
     vector<uint8_t> buffer;
     ConfigMetricsReportList reports;
-
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs + 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs + 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
     EXPECT_EQ(reports.reports_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics(0).duration_metrics().data_size(), 1);
@@ -208,9 +215,13 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForSumDuration3) 
         processor->OnLogEvent(event.get());
     }
 
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 6 * bucketSizeNs + 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 6 * bucketSizeNs + 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
     EXPECT_EQ(reports.reports_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics(0).duration_metrics().data_size(), 1);
@@ -237,10 +248,14 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForMaxDuration1) 
     FeedEvents(config, processor);
     ConfigMetricsReportList reports;
     vector<uint8_t> buffer;
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs - 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs - 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
 
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
 
     EXPECT_EQ(reports.reports_size(), 1);
 
@@ -262,9 +277,13 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForMaxDuration2) 
     FeedEvents(config, processor);
     ConfigMetricsReportList reports;
     vector<uint8_t> buffer;
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs + 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 2 * bucketSizeNs + 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
     EXPECT_EQ(reports.reports_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics(0).duration_metrics().data_size(), 1);
@@ -304,9 +323,13 @@ TEST(WakelockDurationE2eTest, TestAggregatedPredicateDimensionsForMaxDuration3) 
         processor->OnLogEvent(event.get());
     }
 
-    processor->onDumpReport(cfgKey, bucketStartTimeNs + 6 * bucketSizeNs + 1, false, &buffer);
+    processor->onDumpReport(cfgKey, bucketStartTimeNs + 6 * bucketSizeNs + 1, false, true,
+                            ADB_DUMP, &buffer);
     EXPECT_TRUE(buffer.size() > 0);
     EXPECT_TRUE(reports.ParseFromArray(&buffer[0], buffer.size()));
+    backfillDimensionPath(&reports);
+    backfillStringInReport(&reports);
+    backfillStartEndTimestamp(&reports);
     EXPECT_EQ(reports.reports_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics_size(), 1);
     EXPECT_EQ(reports.reports(0).metrics(0).duration_metrics().data_size(), 1);

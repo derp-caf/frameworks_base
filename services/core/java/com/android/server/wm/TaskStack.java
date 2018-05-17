@@ -751,8 +751,9 @@ public class TaskStack extends WindowContainer<Task> implements
      * Used to make room for shadows in the pinned windowing mode.
      */
     int getStackOutset() {
-        if (inPinnedWindowingMode()) {
-            final DisplayMetrics displayMetrics = getDisplayContent().getDisplayMetrics();
+        DisplayContent displayContent = getDisplayContent();
+        if (inPinnedWindowingMode() && displayContent != null) {
+            final DisplayMetrics displayMetrics = displayContent.getDisplayMetrics();
 
             // We multiply by two to match the client logic for converting view elevation
             // to insets, as in {@link WindowManager.LayoutParams#setSurfaceInsets}
@@ -1461,27 +1462,7 @@ public class TaskStack extends WindowContainer<Task> implements
         }
         dc.getBounds(mTmpRect);
         final int orientation = dc.getConfiguration().orientation;
-        return getDockSideUnchecked(bounds, mTmpRect, orientation);
-    }
-
-    static int getDockSideUnchecked(Rect bounds, Rect displayRect, int orientation) {
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            // Portrait mode, docked either at the top or the bottom.
-            if (bounds.top - displayRect.top <= displayRect.bottom - bounds.bottom) {
-                return DOCKED_TOP;
-            } else {
-                return DOCKED_BOTTOM;
-            }
-        } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // Landscape mode, docked either on the left or on the right.
-            if (bounds.left - displayRect.left <= displayRect.right - bounds.right) {
-                return DOCKED_LEFT;
-            } else {
-                return DOCKED_RIGHT;
-            }
-        } else {
-            return DOCKED_INVALID;
-        }
+        return dc.getDockedDividerController().getDockSide(bounds, mTmpRect, orientation);
     }
 
     boolean hasTaskForUser(int userId) {
@@ -1721,6 +1702,9 @@ public class TaskStack extends WindowContainer<Task> implements
             return true;
         }
         final Task homeTask = homeStack.getTopChild();
+        if (homeTask == null) {
+            return true;
+        }
         final AppWindowToken homeApp = homeTask.getTopVisibleAppToken();
         if (!homeTask.isVisible() || homeApp == null) {
             return true;

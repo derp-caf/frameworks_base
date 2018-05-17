@@ -901,7 +901,7 @@ public class AccessibilityNodeInfo implements Parcelable {
      * Refreshes this info with the latest state of the view it represents, and request new
      * data be added by the View.
      *
-     * @param extraDataKey A bitmask of the extra data requested. Data that must be requested
+     * @param extraDataKey The extra data requested. Data that must be requested
      *                     with this mechanism is generally expensive to retrieve, so should only be
      *                     requested when needed. See
      *                     {@link #EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY} and
@@ -2413,11 +2413,16 @@ public class AccessibilityNodeInfo implements Parcelable {
 
     /**
      * Returns whether node represents a heading.
+     * <p><strong>Note:</strong> Returns {@code true} if either {@link #setHeading(boolean)}
+     * marks this node as a heading or if the node has a {@link CollectionItemInfo} that marks
+     * it as such, to accomodate apps that use the now-deprecated API.</p>
      *
      * @return {@code true} if the node is a heading, {@code false} otherwise.
      */
     public boolean isHeading() {
-        return getBooleanProperty(BOOLEAN_PROPERTY_IS_HEADING);
+        if (getBooleanProperty(BOOLEAN_PROPERTY_IS_HEADING)) return true;
+        CollectionItemInfo itemInfo = getCollectionItemInfo();
+        return ((itemInfo != null) && itemInfo.mHeading);
     }
 
     /**
@@ -3437,6 +3442,7 @@ public class AccessibilityNodeInfo implements Parcelable {
         mPackageName = other.mPackageName;
         mClassName = other.mClassName;
         mText = other.mText;
+        mOriginalText = other.mOriginalText;
         mHintText = other.mHintText;
         mError = other.mError;
         mContentDescription = other.mContentDescription;

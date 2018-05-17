@@ -19,6 +19,7 @@ statsd_common_src := \
     ../../core/java/android/os/IStatsManager.aidl \
     src/statsd_config.proto \
     src/FieldValue.cpp \
+    src/hash.cpp \
     src/stats_log_util.cpp \
     src/anomaly/AlarmMonitor.cpp \
     src/anomaly/AlarmTracker.cpp \
@@ -66,7 +67,8 @@ statsd_common_src := \
     src/subscriber/IncidentdReporter.cpp \
     src/subscriber/SubscriberReporter.cpp \
     src/HashableDimensionKey.cpp \
-    src/guardrail/StatsdStats.cpp
+    src/guardrail/StatsdStats.cpp \
+    src/socket/StatsSocketListener.cpp
 
 statsd_common_c_includes := \
     $(LOCAL_PATH)/src \
@@ -96,7 +98,10 @@ statsd_common_shared_libraries := \
     android.hardware.health@2.0 \
     android.hardware.power@1.0 \
     android.hardware.power@1.1 \
-    android.hardware.thermal@1.0
+    android.hardware.thermal@1.0 \
+    libpackagelistparser \
+    libsysutils \
+    libcutils
 
 # =========
 # statsd

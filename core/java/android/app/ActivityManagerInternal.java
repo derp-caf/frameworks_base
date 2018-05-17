@@ -236,6 +236,17 @@ public abstract class ActivityManagerInternal {
             int userId, Intent[] intents, Bundle bOptions);
 
     /**
+     * Start activity {@code intent} without calling user-id check.
+     *
+     * - DO NOT call it with the calling UID cleared.
+     * - The caller must do the calling user ID check.
+     *
+     * @return error codes used by {@link IActivityManager#startActivity} and its siblings.
+     */
+    public abstract int startActivityAsUser(IApplicationThread caller, String callingPackage,
+            Intent intent, @Nullable Bundle options, int userId);
+
+    /**
      * Get the procstate for the UID.  The return value will be between
      * {@link ActivityManager#MIN_PROCESS_STATE} and {@link ActivityManager#MAX_PROCESS_STATE}.
      * Note if the UID doesn't exist, it'll return {@link ActivityManager#PROCESS_STATE_NONEXISTENT}
@@ -375,6 +386,11 @@ public abstract class ActivityManagerInternal {
      * Returns whether the recents component is the home activity for the given user.
      */
     public abstract boolean isRecentsComponentHomeActivity(int userId);
+
+    /**
+     * Cancels any currently running recents animation.
+     */
+    public abstract void cancelRecentsAnimation(boolean restoreHomeStackPosition);
 
     /**
      * Whether an UID is active or idle.

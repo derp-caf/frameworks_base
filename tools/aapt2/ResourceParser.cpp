@@ -586,7 +586,32 @@ bool ResourceParser::ParseResource(xml::XmlPullParser* parser,
 
     out_resource->name.type = ResourceType::kId;
     out_resource->name.entry = maybe_name.value().to_string();
-    out_resource->value = util::make_unique<Id>();
+
+    // Ids either represent a unique resource id or reference another resource id
+    auto item = ParseItem(parser, out_resource, resource_format);
+    if (!item) {
+      return false;
+    }
+
+    String* empty = ValueCast<String>(out_resource->value.get());
+    if (empty && *empty->value == "") {
+      // If no inner element exists, represent a unique identifier
+      out_resource->value = util::make_unique<Id>();
+    } else {
+      Reference* ref = ValueCast<Reference>(out_resource->value.get());
+      if (ref && !ref->name && !ref->id) {
+        // A null reference also means there is no inner element when ids are in the form:
+        //    <id name="name"/>
+        out_resource->value = util::make_unique<Id>();
+      } else if (!ref || ref->name.value().type != ResourceType::kId) {
+        // If an inner element exists, the inner element must be a reference to another resource id
+        diag_->Error(DiagMessage(out_resource->source)
+                         << "<" << parser->element_name()
+                         << "> inner element must either be a resource reference or empty");
+        return false;
+      }
+    }
+
     return true;
   }
 

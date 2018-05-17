@@ -17,6 +17,7 @@
 #define COLOR_H
 
 #include <math.h>
+#include <system/graphics.h>
 
 #include <SkColor.h>
 #include <SkColorSpace.h>
@@ -34,7 +35,7 @@ enum Color {
     LightBlue_300 = 0xFF4FC3F7,
     LightBlue_500 = 0xFF03A9F4,
     Cyan_500 = 0xFF00BCD4,
-    Teal_500 = 0xFF009688,
+    Teal_500 = 0xFF008577,
     Teal_700 = 0xFF00796B,
     Green_500 = 0xFF4CAF50,
     Green_700 = 0xFF388E3C,
@@ -111,6 +112,8 @@ static constexpr float EOCF(float srgb) {
 // approximated with the native sRGB transfer function. This method
 // returns true for sRGB, gamma 2.2 and Display P3 for instance
 bool transferFunctionCloseToSRGB(const SkColorSpace* colorSpace);
+
+sk_sp<SkColorSpace> DataSpaceToColorSpace(android_dataspace dataspace);
 } /* namespace uirenderer */
 } /* namespace android */
 

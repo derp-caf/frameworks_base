@@ -67,6 +67,7 @@ import com.android.systemui.plugins.statusbar.phone.NavGesture.GestureHelper;
 import com.android.systemui.recents.RecentsOnboarding;
 import com.android.systemui.shared.system.ActivityManagerWrapper;
 import com.android.systemui.shared.system.NavigationBarCompat;
+import com.android.systemui.shared.system.WindowManagerWrapper;
 import com.android.systemui.stackdivider.Divider;
 import com.android.systemui.statusbar.policy.DeadZone;
 import com.android.systemui.statusbar.policy.KeyButtonDrawable;
@@ -259,6 +260,8 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
                 new ButtonDispatcher(R.id.accessibility_button));
         mButtonDispatchers.put(R.id.rotate_suggestion,
                 new ButtonDispatcher(R.id.rotate_suggestion));
+        mButtonDispatchers.put(R.id.menu_container,
+                new ButtonDispatcher(R.id.menu_container));
         mDeadZone = new DeadZone(this);
     }
 
@@ -284,12 +287,6 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
     public void setOnVerticalChangedListener(OnVerticalChangedListener onVerticalChangedListener) {
         mOnVerticalChangedListener = onVerticalChangedListener;
         notifyVerticalChangedListener(mVertical);
-    }
-
-    public void onQuickStepStarted() {
-        if (mRecentsOnboarding != null) {
-            mRecentsOnboarding.onQuickStepStarted();
-        }
     }
 
     @Override
@@ -371,6 +368,10 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
 
     public ButtonDispatcher getRotateSuggestionButton() {
         return mButtonDispatchers.get(R.id.rotate_suggestion);
+    }
+
+    public ButtonDispatcher getMenuContainer() {
+        return mButtonDispatchers.get(R.id.menu_container);
     }
 
     public SparseArray<ButtonDispatcher> getButtonDispatchers() {
@@ -682,6 +683,8 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
         reloadNavIcons();
         updateNavButtonIcons();
         setUpSwipeUpOnboarding(isQuickStepSwipeUpEnabled());
+        WindowManagerWrapper.getInstance().setNavBarVirtualKeyHapticFeedbackEnabled(
+                !mOverviewProxyService.shouldShowSwipeUpUI());
     }
 
     private void updateSlippery() {
@@ -769,13 +772,13 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
         if (setIcon) getRotateSuggestionButton().setImageDrawable(mRotateSuggestionIcon);
     }
 
-    public void setRotateButtonVisibility(final boolean visible) {
+    public int setRotateButtonVisibility(final boolean visible) {
         // Never show if a11y is visible
         final boolean adjVisible = visible && !mShowAccessibilityButton;
         final int vis = adjVisible ? View.VISIBLE : View.INVISIBLE;
 
         // No need to do anything if the request matches the current state
-        if (vis == getRotateSuggestionButton().getVisibility()) return;
+        if (vis == getRotateSuggestionButton().getVisibility()) return vis;
 
         getRotateSuggestionButton().setVisibility(vis);
         mShowRotateButton = visible;
@@ -792,9 +795,16 @@ public class NavigationBarView extends FrameLayout implements PluginListener<Nav
 
         // Hide/restore other button visibility, if necessary
         updateNavButtonIcons();
+
+        // Return applied visibility
+        return vis;
     }
 
     public boolean isRotateButtonVisible() { return mShowRotateButton; }
+
+    public void setMenuContainerVisibility(boolean visible) {
+        getMenuContainer().animateFade(visible);
+    }
 
     @Override
     public void onFinishInflate() {

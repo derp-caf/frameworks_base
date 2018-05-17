@@ -26,6 +26,10 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.view.WindowManagerGlobal;
 
+import static android.view.WindowManagerPolicyConstants.NAV_BAR_RIGHT;
+import static android.view.WindowManagerPolicyConstants.NAV_BAR_BOTTOM;
+import static android.view.WindowManagerPolicyConstants.NAV_BAR_LEFT;
+
 import com.android.systemui.shared.recents.view.AppTransitionAnimationSpecsFuture;
 import com.android.systemui.shared.recents.view.RecentsTransition;
 
@@ -58,7 +62,22 @@ public class WindowManagerWrapper {
     public static final int TRANSIT_KEYGUARD_OCCLUDE = WindowManager.TRANSIT_KEYGUARD_OCCLUDE;
     public static final int TRANSIT_KEYGUARD_UNOCCLUDE = WindowManager.TRANSIT_KEYGUARD_UNOCCLUDE;
 
+    public static final int NAV_BAR_POS_INVALID = -1;
+    public static final int NAV_BAR_POS_LEFT = NAV_BAR_LEFT;
+    public static final int NAV_BAR_POS_RIGHT = NAV_BAR_RIGHT;
+    public static final int NAV_BAR_POS_BOTTOM = NAV_BAR_BOTTOM;
+
     public static final int ACTIVITY_TYPE_STANDARD = WindowConfiguration.ACTIVITY_TYPE_STANDARD;
+
+    public static final int WINDOWING_MODE_UNDEFINED = WindowConfiguration.WINDOWING_MODE_UNDEFINED;
+    public static final int WINDOWING_MODE_FULLSCREEN =
+            WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
+    public static final int WINDOWING_MODE_PINNED = WindowConfiguration.WINDOWING_MODE_PINNED;
+    public static final int WINDOWING_MODE_SPLIT_SCREEN_PRIMARY =
+            WindowConfiguration.WINDOWING_MODE_SPLIT_SCREEN_PRIMARY;
+    public static final int WINDOWING_MODE_SPLIT_SCREEN_SECONDARY =
+            WindowConfiguration.WINDOWING_MODE_SPLIT_SCREEN_SECONDARY;
+    public static final int WINDOWING_MODE_FREEFORM = WindowConfiguration.WINDOWING_MODE_FREEFORM;
 
     private static final WindowManagerWrapper sInstance = new WindowManagerWrapper();
 
@@ -104,14 +123,6 @@ public class WindowManagerWrapper {
         }
     }
 
-    public void endProlongedAnimations() {
-        try {
-            WindowManagerGlobal.getWindowManagerService().endProlongedAnimations();
-        } catch (RemoteException e) {
-            Log.w(TAG, "Failed to end prolonged animations: ", e);
-        }
-    }
-
     /**
      * Enable or disable haptic feedback on the navigation bar buttons.
      */
@@ -130,5 +141,29 @@ public class WindowManagerWrapper {
         } catch (RemoteException e) {
             Log.w(TAG, "Failed to set shelf height");
         }
+    }
+
+    public void setRecentsVisibility(boolean visible) {
+        try {
+            WindowManagerGlobal.getWindowManagerService().setRecentsVisibility(visible);
+        } catch (RemoteException e) {
+            Log.w(TAG, "Failed to set recents visibility");
+        }
+    }
+
+    /**
+     * @return The side of the screen where navigation bar is positioned.
+     * @see #NAV_BAR_POS_RIGHT
+     * @see #NAV_BAR_POS_LEFT
+     * @see #NAV_BAR_POS_BOTTOM
+     * @see #NAV_BAR_POS_INVALID
+     */
+    public int getNavBarPosition() {
+        try {
+            return WindowManagerGlobal.getWindowManagerService().getNavBarPosition();
+        } catch (RemoteException e) {
+            Log.w(TAG, "Failed to get nav bar position");
+        }
+        return NAV_BAR_POS_INVALID;
     }
 }

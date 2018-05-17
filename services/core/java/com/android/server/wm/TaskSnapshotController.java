@@ -273,9 +273,8 @@ class TaskSnapshotController {
             return null;
         }
         return new TaskSnapshot(buffer, top.getConfiguration().orientation,
-                getInsets(mainWindow),
-                isLowRamDevice /* reduced */, scaleFraction /* scale */,
-                true /* isRealSnapshot */);
+                getInsets(mainWindow), isLowRamDevice /* reduced */, scaleFraction /* scale */,
+                true /* isRealSnapshot */, task.getWindowingMode());
     }
 
     private boolean shouldDisableSnapshots() {
@@ -318,7 +317,7 @@ class TaskSnapshotController {
     @VisibleForTesting
     int getSnapshotMode(Task task) {
         final AppWindowToken topChild = task.getTopChild();
-        if (!task.isActivityTypeStandardOrUndefined()) {
+        if (!task.isActivityTypeStandardOrUndefined() && !task.isActivityTypeAssistant()) {
             return SNAPSHOT_MODE_NONE;
         } else if (topChild != null && topChild.shouldUseAppThemeSnapshot()) {
             return SNAPSHOT_MODE_APP_THEME;
@@ -365,7 +364,7 @@ class TaskSnapshotController {
         return new TaskSnapshot(hwBitmap.createGraphicBufferHandle(),
                 topChild.getConfiguration().orientation, mainWindow.mStableInsets,
                 ActivityManager.isLowRamDeviceStatic() /* reduced */, 1.0f /* scale */,
-                false /* isRealSnapshot */);
+                false /* isRealSnapshot */, task.getWindowingMode());
     }
 
     /**
