@@ -358,7 +358,7 @@ public class QSCustomizer extends LinearLayout implements OnMenuItemClickListene
     public void updateTopMargin() {
         // move down if we show a header image
         boolean headerImageEnabled = Settings.System.getIntForUser(getContext().getContentResolver(),
-                Settings.System.OMNI_STATUS_BAR_CUSTOM_HEADER, 0,
+                Settings.System.STATUS_BAR_CUSTOM_HEADER, 0,
                 UserHandle.USER_CURRENT) == 1;
         int topMargin = mContext.getResources().getDimensionPixelSize(
                 com.android.internal.R.dimen.quick_qs_offset_height) + (headerImageEnabled ?
