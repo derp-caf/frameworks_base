@@ -28,6 +28,7 @@ import android.app.ActivityManager.TaskSnapshot;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.GraphicBuffer;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Environment;
 import android.os.Handler;
@@ -37,6 +38,7 @@ import android.view.DisplayListCanvas;
 import android.view.RenderNode;
 import android.view.SurfaceControl;
 import android.view.ThreadedRenderer;
+import android.view.View;
 import android.view.WindowManager.LayoutParams;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -265,7 +267,7 @@ class TaskSnapshotController {
 
         final GraphicBuffer buffer = SurfaceControl.captureLayers(
                 task.getSurfaceControl().getHandle(), mTmpRect, scaleFraction);
-
+        final boolean isWindowTranslucent = mainWindow.getAttrs().format != PixelFormat.OPAQUE;
         if (buffer == null || buffer.getWidth() <= 1 || buffer.getHeight() <= 1) {
             if (DEBUG_SCREENSHOT) {
                 Slog.w(TAG_WM, "Failed to take screenshot for " + task);
@@ -274,7 +276,8 @@ class TaskSnapshotController {
         }
         return new TaskSnapshot(buffer, top.getConfiguration().orientation,
                 getInsets(mainWindow), isLowRamDevice /* reduced */, scaleFraction /* scale */,
-                true /* isRealSnapshot */, task.getWindowingMode());
+                true /* isRealSnapshot */, task.getWindowingMode(), getSystemUiVisibility(task),
+                !top.fillsParent() || isWindowTranslucent);
     }
 
     private boolean shouldDisableSnapshots() {
@@ -361,10 +364,13 @@ class TaskSnapshotController {
         if (hwBitmap == null) {
             return null;
         }
+        // Note, the app theme snapshot is never translucent because we enforce a non-translucent
+        // color above
         return new TaskSnapshot(hwBitmap.createGraphicBufferHandle(),
                 topChild.getConfiguration().orientation, mainWindow.mStableInsets,
                 ActivityManager.isLowRamDeviceStatic() /* reduced */, 1.0f /* scale */,
-                false /* isRealSnapshot */, task.getWindowingMode());
+                false /* isRealSnapshot */, task.getWindowingMode(), getSystemUiVisibility(task),
+                false);
     }
 
     /**
@@ -427,6 +433,21 @@ class TaskSnapshotController {
                 listener.onScreenOff();
             }
         });
+    }
+
+    /**
+     * @return The SystemUI visibility flags for the top fullscreen window in the given
+     *         {@param task}.
+     */
+    private int getSystemUiVisibility(Task task) {
+        final AppWindowToken topFullscreenToken = task.getTopFullscreenAppToken();
+        final WindowState topFullscreenWindow = topFullscreenToken != null
+                ? topFullscreenToken.getTopFullscreenWindow()
+                : null;
+        if (topFullscreenWindow != null) {
+            return topFullscreenWindow.getSystemUiVisibility();
+        }
+        return 0;
     }
 
     void dump(PrintWriter pw, String prefix) {

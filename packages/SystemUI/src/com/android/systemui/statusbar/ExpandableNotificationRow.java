@@ -54,6 +54,7 @@ import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction;
 import android.widget.Chronometer;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -709,6 +710,8 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         updateClickAndFocus();
         if (mNotificationParent != null) {
             setOverrideTintColor(NO_COLOR, 0.0f);
+            // Let's reset the distance to top roundness, as this isn't applied to group children
+            setDistanceToTopRoundness(NO_ROUNDNESS);
             mNotificationParent.updateBackgroundForGroupState();
         }
         updateIconVisibilities();
@@ -1087,6 +1090,15 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
             NotificationContentView notificationContentView) {
         if (getShowingLayout() == notificationContentView) {
             setTintColor(customBackgroundColor, animate);
+        }
+    }
+
+    @Override
+    protected void setBackgroundTintColor(int color) {
+        super.setBackgroundTintColor(color);
+        NotificationContentView view = getShowingLayout();
+        if (view != null) {
+            view.setBackgroundTintColor(color);
         }
     }
 
@@ -1590,6 +1602,10 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
     public void doLongClickCallback(int x, int y) {
         createMenu();
         MenuItem menuItem = getProvider().getLongpressMenuItem(mContext);
+        doLongClickCallback(x, y, menuItem);
+    }
+
+    private void doLongClickCallback(int x, int y, MenuItem menuItem) {
         if (mLongPressListener != null && menuItem != null) {
             mLongPressListener.onLongPress(this, x, y, menuItem);
         }
@@ -1640,6 +1656,45 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         }
 
         mMenuRow.resetMenu();
+    }
+
+    void onGutsOpened() {
+        resetTranslation();
+        updateContentAccessibilityImportanceForGuts(false /* isEnabled */);
+    }
+
+    void onGutsClosed() {
+        updateContentAccessibilityImportanceForGuts(true /* isEnabled */);
+    }
+
+    /**
+     * Updates whether all the non-guts content inside this row is important for accessibility.
+     *
+     * @param isEnabled whether the content views should be enabled for accessibility
+     */
+    private void updateContentAccessibilityImportanceForGuts(boolean isEnabled) {
+        if (mChildrenContainer != null) {
+            updateChildAccessibilityImportance(mChildrenContainer, isEnabled);
+        }
+        if (mLayouts != null) {
+            for (View view : mLayouts) {
+                updateChildAccessibilityImportance(view, isEnabled);
+            }
+        }
+
+        if (isEnabled) {
+            this.requestAccessibilityFocus();
+        }
+    }
+
+    /**
+     * Updates whether the given childView is important for accessibility based on
+     * {@code isEnabled}.
+     */
+    private void updateChildAccessibilityImportance(View childView, boolean isEnabled) {
+        childView.setImportantForAccessibility(isEnabled
+                ? View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+                : View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
     }
 
     public CharSequence getActiveRemoteInputText() {
@@ -2233,6 +2288,11 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
     @Override
     public void setHideSensitive(boolean hideSensitive, boolean animated, long delay,
             long duration) {
+        if (getVisibility() == GONE) {
+            // If we are GONE, the hideSensitive parameter will not be calculated and always be
+            // false, which is incorrect, let's wait until a real call comes in later.
+            return;
+        }
         boolean oldShowingPublic = mShowingPublic;
         mShowingPublic = mSensitive && hideSensitive;
         if (mShowingPublicInitialized && mShowingPublic == oldShowingPublic) {
@@ -2659,6 +2719,16 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
                 info.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND);
             }
         }
+        NotificationMenuRowPlugin provider = getProvider();
+        if (provider != null) {
+            MenuItem snoozeMenu = provider.getSnoozeMenuItem(getContext());
+            if (snoozeMenu != null) {
+                AccessibilityAction action = new AccessibilityAction(R.id.action_snooze,
+                    getContext().getResources()
+                        .getString(R.string.notification_menu_snooze_action));
+                info.addAction(action);
+            }
+        }
     }
 
     @Override
@@ -2676,6 +2746,16 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
                 return true;
             case AccessibilityNodeInfo.ACTION_LONG_CLICK:
                 doLongClickCallback();
+                return true;
+            case R.id.action_snooze:
+                NotificationMenuRowPlugin provider = getProvider();
+                if (provider == null) {
+                    provider = createMenu();
+                }
+                MenuItem snoozeMenu = provider.getSnoozeMenuItem(getContext());
+                if (snoozeMenu != null) {
+                    doLongClickCallback(getWidth() / 2, getHeight() / 2, snoozeMenu);
+                }
                 return true;
         }
         return false;
@@ -2695,6 +2775,10 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         return mNotificationViewState;
     }
 
+    public NotificationViewState getViewState() {
+        return mNotificationViewState;
+    }
+
     @Override
     public boolean isAboveShelf() {
         return !isOnKeyguard()
@@ -2710,6 +2794,24 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
             }
             notifyHeightChanged(false /* needsAnimation */);
         }
+    }
+
+    @Override
+    public boolean topAmountNeedsClipping() {
+        if (isGroupExpanded()) {
+            return true;
+        }
+        if (isGroupExpansionChanging()) {
+            return true;
+        }
+        if (getShowingLayout().shouldClipToRounding(true /* topRounded */,
+                false /* bottomRounded */)) {
+            return true;
+        }
+        if (mGuts != null && mGuts.getAlpha() != 0.0f) {
+            return true;
+        }
+        return false;
     }
 
     @Override

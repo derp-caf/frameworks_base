@@ -53,6 +53,7 @@ import android.widget.TextView;
 
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.nano.MetricsProto;
+import com.android.systemui.Dependency;
 import com.android.systemui.Interpolators;
 import com.android.systemui.R;
 import com.android.systemui.statusbar.NotificationData;
@@ -81,6 +82,7 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
     private RemoteInput[] mRemoteInputs;
     private RemoteInput mRemoteInput;
     private RemoteInputController mController;
+    private RemoteInputQuickSettingsDisabler mRemoteInputQuickSettingsDisabler;
 
     private NotificationData.Entry mEntry;
 
@@ -96,6 +98,7 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
 
     public RemoteInputView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mRemoteInputQuickSettingsDisabler = Dependency.get(RemoteInputQuickSettingsDisabler.class);
     }
 
     @Override
@@ -151,6 +154,7 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
         mController.removeRemoteInput(mEntry, mToken);
         mEditText.mShowImeOnInputConnection = false;
         mController.remoteInputSent(mEntry);
+        mEntry.setHasSentReply();
 
         // Tell ShortcutManager that this package has been "activated".  ShortcutManager
         // will reset the throttling for this package.
@@ -232,6 +236,9 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
                 }
             }
         }
+
+        mRemoteInputQuickSettingsDisabler.setRemoteInputActive(false);
+
         MetricsLogger.action(mContext, MetricsProto.MetricsEvent.ACTION_REMOTE_INPUT_CLOSE,
                 mEntry.notification.getPackageName());
     }
@@ -291,6 +298,9 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
         mEditText.setSelection(mEditText.getText().length());
         mEditText.requestFocus();
         mController.addRemoteInput(mEntry, mToken);
+
+        mRemoteInputQuickSettingsDisabler.setRemoteInputActive(true);
+
         updateSendButton();
     }
 
@@ -551,6 +561,16 @@ public class RemoteInputView extends LinearLayout implements View.OnClickListene
                 return true;
             }
             return super.onKeyUp(keyCode, event);
+        }
+
+        @Override
+        public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+            // When BACK key is pressed, this method would be invoked twice.
+            if (event.getKeyCode() == KeyEvent.KEYCODE_BACK &&
+                    event.getAction() == KeyEvent.ACTION_UP) {
+                defocusIfNeeded(true /* animate */);
+            }
+            return super.onKeyPreIme(keyCode, event);
         }
 
         @Override

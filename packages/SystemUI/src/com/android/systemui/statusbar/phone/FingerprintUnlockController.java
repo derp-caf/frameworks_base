@@ -266,7 +266,9 @@ public class FingerprintUnlockController extends KeyguardUpdateMonitorCallback {
     }
 
     private void showBouncer() {
-        mStatusBarKeyguardViewManager.showBouncer(false);
+        if (calculateMode() == MODE_SHOW_BOUNCER) {
+            mStatusBarKeyguardViewManager.showBouncer(false);
+        }
         mStatusBarKeyguardViewManager.animateCollapsePanels(
                 FINGERPRINT_COLLAPSE_SPEEDUP_FACTOR);
         mPendingShowBouncer = false;
@@ -401,10 +403,19 @@ public class FingerprintUnlockController extends KeyguardUpdateMonitorCallback {
         pw.print("   mWakeLock="); pw.println(mWakeLock);
     }
 
+    /**
+     * Successful authentication with fingerprint that wakes up the device.
+     */
     public boolean isWakeAndUnlock() {
-        return mMode == MODE_UNLOCK
-                || mMode == MODE_WAKE_AND_UNLOCK
+        return mMode == MODE_WAKE_AND_UNLOCK
                 || mMode == MODE_WAKE_AND_UNLOCK_PULSING
                 || mMode == MODE_WAKE_AND_UNLOCK_FROM_DREAM;
+    }
+
+    /**
+     * Successful authentication with fingerprint when the screen was either on or off.
+     */
+    public boolean isFingerprintUnlock() {
+        return isWakeAndUnlock() || mMode == MODE_UNLOCK;
     }
 }

@@ -37,16 +37,12 @@ public class NavigationBarCompat {
         return convertDpToPixel(10);
     }
 
-    public static int getQuickScrubDragSlopPx() {
-        return convertDpToPixel(20);
-    }
-
     public static int getQuickStepTouchSlopPx() {
         return convertDpToPixel(24);
     }
 
     public static int getQuickScrubTouchSlopPx() {
-        return convertDpToPixel(35);
+        return convertDpToPixel(24);
     }
 
     @Retention(RetentionPolicy.SOURCE)
@@ -57,12 +53,12 @@ public class NavigationBarCompat {
     public static final int HIT_TARGET_BACK = 1;
     public static final int HIT_TARGET_HOME = 2;
     public static final int HIT_TARGET_OVERVIEW = 3;
+    public static final int HIT_TARGET_ROTATION = 4;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FLAG_DISABLE_SWIPE_UP,
             FLAG_DISABLE_QUICK_SCRUB,
-            FLAG_SHOW_OVERVIEW_BUTTON,
-            FLAG_HIDE_BACK_BUTTON
+            FLAG_SHOW_OVERVIEW_BUTTON
     })
     public @interface InteractionType {}
 
@@ -80,11 +76,6 @@ public class NavigationBarCompat {
      * Interaction type: show/hide the overview button while this service is connected to launcher
      */
     public static final int FLAG_SHOW_OVERVIEW_BUTTON = 0x4;
-
-    /**
-     * Interaction type: show/hide the back button while this service is connected to launcher
-     */
-    public static final int FLAG_HIDE_BACK_BUTTON = 0x8;
 
     private static int convertDpToPixel(float dp){
         return (int) (dp * Resources.getSystem().getDisplayMetrics().density);

@@ -315,6 +315,7 @@ class ActivityStarter {
         Configuration globalConfig;
         int userId;
         WaitResult waitResult;
+        int filterCallingUid;
 
         /**
          * If set to {@code true}, allows this activity start to look into
@@ -370,6 +371,7 @@ class ActivityStarter {
             mayWait = false;
             avoidMoveToFront = false;
             allowPendingRemoteAnimationRegistryLookup = true;
+            filterCallingUid = UserHandle.USER_NULL;
         }
 
         /**
@@ -407,6 +409,7 @@ class ActivityStarter {
             avoidMoveToFront = request.avoidMoveToFront;
             allowPendingRemoteAnimationRegistryLookup
                     = request.allowPendingRemoteAnimationRegistryLookup;
+            filterCallingUid = request.filterCallingUid;
         }
     }
 
@@ -717,7 +720,7 @@ class ActivityStarter {
 
         boolean abort = !mSupervisor.checkStartAnyActivityPermission(intent, aInfo, resultWho,
                 requestCode, callingPid, callingUid, callingPackage, ignoreTargetSecurity,
-                callerApp, resultRecord, resultStack);
+                inTask != null, callerApp, resultRecord, resultStack);
         abort |= !mService.mIntentFirewall.checkStartActivity(intent, callingUid,
                 callingPid, resolvedType, aInfo.applicationInfo);
 
@@ -795,7 +798,9 @@ class ActivityStarter {
                 callingUid = realCallingUid;
                 callingPid = realCallingPid;
 
-                rInfo = mSupervisor.resolveIntent(intent, resolvedType, userId, 0, realCallingUid);
+                rInfo = mSupervisor.resolveIntent(intent, resolvedType, userId, 0,
+                        computeResolveFilterUid(
+                                callingUid, realCallingUid, mRequest.filterCallingUid));
                 aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags,
                         null /*profilerInfo*/);
 
@@ -959,6 +964,16 @@ class ActivityStarter {
         final int realCallingPid = Binder.getCallingPid();
         final int realCallingUid = Binder.getCallingUid();
 
+        int callingPid;
+        if (callingUid >= 0) {
+            callingPid = -1;
+        } else if (caller == null) {
+            callingPid = realCallingPid;
+            callingUid = realCallingUid;
+        } else {
+            callingPid = callingUid = -1;
+        }
+
         // Save a copy in case ephemeral needs it
         final Intent ephemeralIntent = new Intent(intent);
         // Don't modify the client's object!
@@ -977,7 +992,9 @@ class ActivityStarter {
         }
 
         ResolveInfo rInfo = mSupervisor.resolveIntent(intent, resolvedType, userId,
-                0 /* matchFlags */, realCallingUid);
+                0 /* matchFlags */,
+                        computeResolveFilterUid(
+                                callingUid, realCallingUid, mRequest.filterCallingUid));
         if (rInfo == null) {
             UserInfo userInfo = mSupervisor.getUserInfo(userId);
             if (userInfo != null && userInfo.isManagedProfile()) {
@@ -999,7 +1016,8 @@ class ActivityStarter {
                     rInfo = mSupervisor.resolveIntent(intent, resolvedType, userId,
                             PackageManager.MATCH_DIRECT_BOOT_AWARE
                                     | PackageManager.MATCH_DIRECT_BOOT_UNAWARE,
-                            realCallingUid);
+                            computeResolveFilterUid(
+                                    callingUid, realCallingUid, mRequest.filterCallingUid));
                 }
             }
         }
@@ -1007,16 +1025,6 @@ class ActivityStarter {
         ActivityInfo aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags, profilerInfo);
 
         synchronized (mService) {
-            int callingPid;
-            if (callingUid >= 0) {
-                callingPid = -1;
-            } else if (caller == null) {
-                callingPid = realCallingPid;
-                callingUid = realCallingUid;
-            } else {
-                callingPid = callingUid = -1;
-            }
-
             final ActivityStack stack = mSupervisor.mFocusedStack;
             stack.mConfigWillChange = globalConfig != null
                     && mService.getGlobalConfiguration().diff(globalConfig) != 0;
@@ -1081,7 +1089,8 @@ class ActivityStarter {
                         callingPid = Binder.getCallingPid();
                         componentSpecified = true;
                         rInfo = mSupervisor.resolveIntent(intent, null /*resolvedType*/, userId,
-                                0 /* matchFlags */, realCallingUid);
+                                0 /* matchFlags */, computeResolveFilterUid(
+                                        callingUid, realCallingUid, mRequest.filterCallingUid));
                         aInfo = rInfo != null ? rInfo.activityInfo : null;
                         if (aInfo != null) {
                             aInfo = mService.getActivityInfoForUser(aInfo, userId);
@@ -1166,6 +1175,23 @@ class ActivityStarter {
             mSupervisor.getActivityMetricsLogger().notifyActivityLaunched(res, outRecord[0]);
             return res;
         }
+    }
+
+    /**
+     * Compute the logical UID based on which the package manager would filter
+     * app components i.e. based on which the instant app policy would be applied
+     * because it is the logical calling UID.
+     *
+     * @param customCallingUid The UID on whose behalf to make the call.
+     * @param actualCallingUid The UID actually making the call.
+     * @param filterCallingUid The UID to be used to filter for instant apps.
+     * @return The logical UID making the call.
+     */
+    static int computeResolveFilterUid(int customCallingUid, int actualCallingUid,
+            int filterCallingUid) {
+        return filterCallingUid != UserHandle.USER_NULL
+                ? filterCallingUid
+                : (customCallingUid >= 0 ? customCallingUid : actualCallingUid);
     }
 
     private int startActivity(final ActivityRecord r, ActivityRecord sourceRecord,
@@ -1582,6 +1608,7 @@ class ActivityStarter {
                     }
                 }
             } else if (mOptions.getAvoidMoveToFront()) {
+                mDoResume = false;
                 mAvoidMoveToFront = true;
             }
         }
@@ -1924,7 +1951,7 @@ class ActivityStarter {
         // Need to update mTargetStack because if task was moved out of it, the original stack may
         // be destroyed.
         mTargetStack = intentActivity.getStack();
-        if (!mAvoidMoveToFront && !mMovedToFront && mDoResume) {
+        if (!mMovedToFront && mDoResume) {
             if (DEBUG_TASKS) Slog.d(TAG_TASKS, "Bring to front target: " + mTargetStack
                     + " from " + intentActivity);
             mTargetStack.moveToFront("intentActivityFound");
@@ -2558,6 +2585,11 @@ class ActivityStarter {
 
     ActivityStarter setIgnoreTargetSecurity(boolean ignoreTargetSecurity) {
         mRequest.ignoreTargetSecurity = ignoreTargetSecurity;
+        return this;
+    }
+
+    ActivityStarter setFilterCallingUid(int filterCallingUid) {
+        mRequest.filterCallingUid = filterCallingUid;
         return this;
     }
 

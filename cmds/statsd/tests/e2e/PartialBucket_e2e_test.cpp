@@ -46,7 +46,7 @@ ConfigMetricsReport GetReports(sp<StatsLogProcessor> processor, int64_t timestam
     IPCThreadState* ipc = IPCThreadState::self();
     ConfigKey configKey(ipc->getCallingUid(), kConfigKey);
     processor->onDumpReport(configKey, timestamp, include_current /* include_current_bucket*/,
-                            true/* include strings*/, ADB_DUMP, &output);
+                            ADB_DUMP, &output);
     ConfigMetricsReportList reports;
     reports.ParseFromArray(output.data(), output.size());
     EXPECT_EQ(1, reports.reports_size());
@@ -84,6 +84,7 @@ StatsdConfig MakeValueMetricConfig(int64_t minTime) {
             CreateDimensions(android::util::TEMPERATURE, {2 /* sensor name field */});
     valueMetric->set_bucket(FIVE_MINUTES);
     valueMetric->set_min_bucket_size_nanos(minTime);
+    valueMetric->set_use_absolute_value_on_reset(true);
     return config;
 }
 

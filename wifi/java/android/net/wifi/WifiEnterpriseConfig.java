@@ -64,6 +64,11 @@ public class WifiEnterpriseConfig implements Parcelable {
     public static final String DOM_SUFFIX_MATCH_KEY = "domain_suffix_match";
     /** @hide */
     public static final String OPP_KEY_CACHING     = "proactive_key_caching";
+    /** @hide */
+    public static final String EAP_ERP             = "eap_erp";
+    /** @hide */
+    public static final String KEY_SIMNUM          = "sim_num";
+
     /**
      * String representing the keystore OpenSSL ENGINE's ID.
      * @hide
@@ -137,7 +142,8 @@ public class WifiEnterpriseConfig implements Parcelable {
     /**
      * Fields that have unquoted values in {@link #mFields}.
      */
-    private static final List<String> UNQUOTED_KEYS = Arrays.asList(ENGINE_KEY, OPP_KEY_CACHING);
+    private static final List<String> UNQUOTED_KEYS = Arrays.asList(ENGINE_KEY, OPP_KEY_CACHING,
+                                                                    EAP_ERP);
 
     private HashMap<String, String> mFields = new HashMap<String, String>();
     private X509Certificate[] mCaCerts;
@@ -442,6 +448,15 @@ public class WifiEnterpriseConfig implements Parcelable {
         }
     }
 
+    /** @hide */
+    public void setSimNum(int SIMNum) {
+         setFieldValue(KEY_SIMNUM, Integer.toString(SIMNum));
+    }
+
+    /** @hide */
+    public String getSimNum() {
+        return getFieldValue(KEY_SIMNUM);
+    }
     /**
      * Get the eap method.
      * @return eap method configured

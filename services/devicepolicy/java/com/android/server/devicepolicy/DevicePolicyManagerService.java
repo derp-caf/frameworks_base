@@ -2353,8 +2353,12 @@ public class DevicePolicyManagerService extends BaseIDevicePolicyManager {
             final String value = Boolean.toString(hasDeviceOwner);
             mInjector.systemPropertiesSet(PROPERTY_DEVICE_OWNER_PRESENT, value);
             Slog.i(LOG_TAG, "Set ro.device_owner property to " + value);
+        }
+    }
 
-            if (hasDeviceOwner && mInjector.securityLogGetLoggingEnabledProperty()) {
+    private void maybeStartSecurityLogMonitorOnActivityManagerReady() {
+        synchronized (getLockObject()) {
+            if (mInjector.securityLogIsLoggingEnabled()) {
                 mSecurityLogMonitor.start();
                 mInjector.runCryptoSelfTest();
                 maybePauseDeviceWideLoggingLocked();
@@ -3351,6 +3355,10 @@ public class DevicePolicyManagerService extends BaseIDevicePolicyManager {
             case SystemService.PHASE_LOCK_SETTINGS_READY:
                 onLockSettingsReady();
                 loadAdminDataAsync();
+                mOwners.systemReady();
+                break;
+            case SystemService.PHASE_ACTIVITY_MANAGER_READY:
+                maybeStartSecurityLogMonitorOnActivityManagerReady();
                 break;
             case SystemService.PHASE_BOOT_COMPLETED:
                 ensureDeviceOwnerUserStarted(); // TODO Consider better place to do this.

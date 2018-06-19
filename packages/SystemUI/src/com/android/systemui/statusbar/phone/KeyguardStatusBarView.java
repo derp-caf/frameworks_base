@@ -90,6 +90,11 @@ public class KeyguardStatusBarView extends RelativeLayout
     private ViewGroup mStatusIconArea;
     private int mLayoutState = LAYOUT_NONE;
 
+    /**
+     * Draw this many pixels into the left/right side of the cutout to optimally use the space
+     */
+    private int mCutoutSideNudge = 0;
+
     public KeyguardStatusBarView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -128,13 +133,7 @@ public class KeyguardStatusBarView extends RelativeLayout
         mMultiUserSwitch.setLayoutParams(lp);
 
         // System icons
-        lp = (MarginLayoutParams) mStatusIconArea.getLayoutParams();
-        lp.height = getResources().getDimensionPixelSize(
-                com.android.internal.R.dimen.status_bar_height);
-
         lp = (MarginLayoutParams) mSystemIconsContainer.getLayoutParams();
-        lp.height = getResources().getDimensionPixelSize(
-                R.dimen.status_bar_height);
         lp.setMarginStart(getResources().getDimensionPixelSize(
                 R.dimen.system_icons_super_container_margin_start));
         mSystemIconsContainer.setLayoutParams(lp);
@@ -164,6 +163,8 @@ public class KeyguardStatusBarView extends RelativeLayout
                 R.dimen.system_icons_switcher_hidden_expanded_margin);
         mSystemIconsBaseMargin = res.getDimensionPixelSize(
                 R.dimen.system_icons_super_container_avatarless_margin_end);
+        mCutoutSideNudge = getResources().getDimensionPixelSize(
+                R.dimen.display_cutout_margin_consumption);
     }
 
     private void updateVisibilities() {
@@ -272,6 +273,8 @@ public class KeyguardStatusBarView extends RelativeLayout
 
         mCutoutSpace.setVisibility(View.VISIBLE);
         RelativeLayout.LayoutParams lp = (LayoutParams) mCutoutSpace.getLayoutParams();
+        bounds.left = bounds.left + mCutoutSideNudge;
+        bounds.right = bounds.right - mCutoutSideNudge;
         lp.width = bounds.width();
         lp.height = bounds.height();
         lp.addRule(RelativeLayout.CENTER_IN_PARENT);

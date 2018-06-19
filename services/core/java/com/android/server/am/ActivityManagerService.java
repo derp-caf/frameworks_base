@@ -37,9 +37,7 @@ import static android.app.ActivityManagerInternal.ASSIST_KEY_DATA;
 import static android.app.ActivityManagerInternal.ASSIST_KEY_RECEIVER_EXTRAS;
 import static android.app.ActivityManagerInternal.ASSIST_KEY_STRUCTURE;
 import static android.app.ActivityThread.PROC_START_SEQ_IDENT;
-import static android.app.AppOpsManager.OP_ASSIST_STRUCTURE;
 import static android.app.AppOpsManager.OP_NONE;
-import static android.app.WindowConfiguration.ACTIVITY_TYPE_HOME;
 import static android.app.WindowConfiguration.ACTIVITY_TYPE_STANDARD;
 import static android.app.WindowConfiguration.ACTIVITY_TYPE_UNDEFINED;
 import static android.app.WindowConfiguration.WINDOWING_MODE_FREEFORM;
@@ -1395,9 +1393,14 @@ public class ActivityManagerService extends IActivityManager.Stub
     DeviceIdleController.LocalService mLocalDeviceIdleController;
 
     /**
-     * Set of app ids that are whitelisted for device idle and thus background check.
+     * Power-save whitelisted app-ids (not including except-idle-whitelisted ones).
      */
     int[] mDeviceIdleWhitelist = new int[0];
+
+    /**
+     * Power-save whitelisted app-ids (including except-idle-whitelisted ones).
+     */
+    int[] mDeviceIdleExceptIdleWhitelist = new int[0];
 
     /**
      * Set of app ids that are temporarily allowed to escape bg check due to high-pri message
@@ -1866,6 +1869,11 @@ public class ActivityManagerService extends IActivityManager.Stub
      * Set to true after the system has finished booting.
      */
     boolean mBooted = false;
+
+    /**
+     * Current boot phase.
+     */
+    int mBootPhase;
 
     WindowManagerService mWindowManager;
     final ActivityThread mSystemThread;
@@ -2935,6 +2943,7 @@ public class ActivityManagerService extends IActivityManager.Stub
 
         @Override
         public void onBootPhase(int phase) {
+            mService.mBootPhase = phase;
             if (phase == PHASE_SYSTEM_SERVICES_READY) {
                 mService.mBatteryStatsService.systemServicesReady();
                 mService.mServices.systemServicesReady();
@@ -5235,6 +5244,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         final ActivityRecord sourceRecord;
         final int targetUid;
         final String targetPackage;
+        final boolean isResolver;
         synchronized (this) {
             if (resultTo == null) {
                 throw new SecurityException("Must be called from an activity");
@@ -5272,6 +5282,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             }
             targetUid = sourceRecord.launchedFromUid;
             targetPackage = sourceRecord.launchedFromPackage;
+            isResolver = sourceRecord.isResolverOrChildActivity();
         }
 
         if (userId == UserHandle.USER_NULL) {
@@ -5291,6 +5302,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                     .setActivityOptions(bOptions)
                     .setMayWait(userId)
                     .setIgnoreTargetSecurity(ignoreTargetSecurity)
+                    .setFilterCallingUid(isResolver ? 0 /* system */ : targetUid)
                     .execute();
         } catch (SecurityException e) {
             // XXX need to figure out how to propagate to original app.
@@ -9467,7 +9479,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                 // If force-background-check is enabled, restrict all apps that aren't whitelisted.
                 if (mForceBackgroundCheck &&
                         !UserHandle.isCore(uid) &&
-                        !isOnDeviceIdleWhitelistLocked(uid)) {
+                        !isOnDeviceIdleWhitelistLocked(uid, /*allowExceptIdleToo=*/ true)) {
                     if (DEBUG_BACKGROUND_CHECK) {
                         Slog.i(TAG, "Force background check: " +
                                 uid + "/" + packageName + " restricted");
@@ -9505,7 +9517,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
 
         // Is this app on the battery whitelist?
-        if (isOnDeviceIdleWhitelistLocked(uid)) {
+        if (isOnDeviceIdleWhitelistLocked(uid, /*allowExceptIdleToo=*/ false)) {
             if (DEBUG_BACKGROUND_CHECK) {
                 Slog.i(TAG, "App " + uid + "/" + packageName
                         + " on idle whitelist; not restricted in background");
@@ -9547,9 +9559,12 @@ public class ActivityManagerService extends IActivityManager.Stub
                         ? appRestrictedInBackgroundLocked(uid, packageName, packageTargetSdk)
                         : appServicesRestrictedInBackgroundLocked(uid, packageName,
                                 packageTargetSdk);
-                if (DEBUG_BACKGROUND_CHECK) Slog.d(TAG, "checkAllowBackground: uid=" + uid
-                        + " pkg=" + packageName + " startMode=" + startMode
-                        + " onwhitelist=" + isOnDeviceIdleWhitelistLocked(uid));
+                if (DEBUG_BACKGROUND_CHECK) {
+                    Slog.d(TAG, "checkAllowBackground: uid=" + uid
+                            + " pkg=" + packageName + " startMode=" + startMode
+                            + " onwhitelist=" + isOnDeviceIdleWhitelistLocked(uid, false)
+                            + " onwhitelist(ei)=" + isOnDeviceIdleWhitelistLocked(uid, true));
+                }
                 if (startMode == ActivityManager.APP_START_MODE_DELAYED) {
                     // This is an old app that has been forced into a "compatible as possible"
                     // mode of background check.  To increase compatibility, we will allow other
@@ -9576,9 +9591,14 @@ public class ActivityManagerService extends IActivityManager.Stub
     /**
      * @return whether a UID is in the system, user or temp doze whitelist.
      */
-    boolean isOnDeviceIdleWhitelistLocked(int uid) {
+    boolean isOnDeviceIdleWhitelistLocked(int uid, boolean allowExceptIdleToo) {
         final int appId = UserHandle.getAppId(uid);
-        return Arrays.binarySearch(mDeviceIdleWhitelist, appId) >= 0
+
+        final int[] whitelist = allowExceptIdleToo
+                ? mDeviceIdleExceptIdleWhitelist
+                : mDeviceIdleWhitelist;
+
+        return Arrays.binarySearch(whitelist, appId) >= 0
                 || Arrays.binarySearch(mDeviceIdleTempWhitelist, appId) >= 0
                 || mPendingTempWhitelist.indexOfKey(uid) >= 0;
     }
@@ -15449,6 +15469,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             mStackSupervisor.resumeFocusedStackTopActivityLocked();
             mUserController.sendUserSwitchBroadcasts(-1, currentUserId);
 
+            BinderInternal.nSetBinderProxyCountWatermarks(6000,5500);
             BinderInternal.nSetBinderProxyCountEnabled(true);
             BinderInternal.setBinderProxyCountCallback(
                     new BinderInternal.BinderProxyLimitListener() {
@@ -16104,7 +16125,10 @@ public class ActivityManagerService extends IActivityManager.Stub
     }
 
     @Override
-    public void getMyMemoryState(ActivityManager.RunningAppProcessInfo outInfo) {
+    public void getMyMemoryState(ActivityManager.RunningAppProcessInfo outState) {
+        if (outState == null) {
+            throw new IllegalArgumentException("outState is null");
+        }
         enforceNotIsolatedCaller("getMyMemoryState");
 
         final int callingUid = Binder.getCallingUid();
@@ -16115,7 +16139,9 @@ public class ActivityManagerService extends IActivityManager.Stub
             synchronized (mPidsSelfLocked) {
                 proc = mPidsSelfLocked.get(Binder.getCallingPid());
             }
-            fillInProcMemInfo(proc, outInfo, clientTargetSdk);
+            if (proc != null) {
+                fillInProcMemInfo(proc, outState, clientTargetSdk);
+            }
         }
     }
 
@@ -17123,6 +17149,8 @@ public class ActivityManagerService extends IActivityManager.Stub
                 }
             }
             pw.println("  mDeviceIdleWhitelist=" + Arrays.toString(mDeviceIdleWhitelist));
+            pw.println("  mDeviceIdleExceptIdleWhitelist="
+                    + Arrays.toString(mDeviceIdleExceptIdleWhitelist));
             pw.println("  mDeviceIdleTempWhitelist=" + Arrays.toString(mDeviceIdleTempWhitelist));
             if (mPendingTempWhitelist.size() > 0) {
                 pw.println("  mPendingTempWhitelist:");
@@ -20703,7 +20731,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         IPackageManager pm = AppGlobals.getPackageManager();
         ApplicationInfo app = null;
         try {
-            app = pm.getApplicationInfo(packageName, 0, userId);
+            app = pm.getApplicationInfo(packageName, STOCK_PM_FLAGS, userId);
         } catch (RemoteException e) {
             // can't happen; package manager is process-local
         }
@@ -20889,7 +20917,7 @@ public class ActivityManagerService extends IActivityManager.Stub
     // BROADCASTS
     // =========================================================
 
-    private boolean isInstantApp(ProcessRecord record, String callerPackage, int uid) {
+    private boolean isInstantApp(ProcessRecord record, @Nullable String callerPackage, int uid) {
         if (UserHandle.getAppId(uid) < FIRST_APPLICATION_UID) {
             return false;
         }
@@ -20898,13 +20926,17 @@ public class ActivityManagerService extends IActivityManager.Stub
             return record.info.isInstantApp();
         }
         // Otherwise check with PackageManager.
-        if (callerPackage == null) {
-            Slog.e(TAG, "isInstantApp with an application's uid, no record, and no package name");
-            throw new IllegalArgumentException("Calling application did not provide package name");
-        }
-        mAppOpsService.checkPackage(uid, callerPackage);
+        IPackageManager pm = AppGlobals.getPackageManager();
         try {
-            IPackageManager pm = AppGlobals.getPackageManager();
+            if (callerPackage == null) {
+                final String[] packageNames = pm.getPackagesForUid(uid);
+                if (packageNames == null || packageNames.length == 0) {
+                    throw new IllegalArgumentException("Unable to determine caller package name");
+                }
+                // Instant Apps can't use shared uids, so its safe to only check the first package.
+                callerPackage = packageNames[0];
+            }
+            mAppOpsService.checkPackage(uid, callerPackage);
             return pm.isInstantApp(callerPackage, UserHandle.getUserId(uid));
         } catch (RemoteException e) {
             Slog.e(TAG, "Error looking up if " + callerPackage + " is an instant app.", e);
@@ -21618,6 +21650,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                             return ActivityManager.BROADCAST_SUCCESS;
                         }
                         mStackSupervisor.updateActivityApplicationInfoLocked(aInfo);
+                        mServices.updateServiceApplicationInfoLocked(aInfo);
                         sendPackageBroadcastLocked(ApplicationThreadConstants.PACKAGE_REPLACED,
                                 new String[] {ssp}, userId);
                     }
@@ -22174,12 +22207,13 @@ public class ActivityManagerService extends IActivityManager.Stub
                     doNext = r.queue.finishReceiverLocked(r, resultCode,
                         resultData, resultExtras, resultAbort, true);
                 }
+                if (doNext) {
+                    r.queue.processNextBroadcastLocked(/*fromMsg=*/ false, /*skipOomAdj=*/ true);
+                }
+                // updateOomAdjLocked() will be done here
+                trimApplicationsLocked();
             }
 
-            if (doNext) {
-                r.queue.processNextBroadcast(false);
-            }
-            trimApplications();
         } finally {
             Binder.restoreCallingIdentity(origId);
         }
@@ -25965,40 +25999,43 @@ public class ActivityManagerService extends IActivityManager.Stub
 
     final void trimApplications() {
         synchronized (this) {
-            int i;
+            trimApplicationsLocked();
+        }
+    }
 
-            // First remove any unused application processes whose package
-            // has been removed.
-            for (i=mRemovedProcesses.size()-1; i>=0; i--) {
-                final ProcessRecord app = mRemovedProcesses.get(i);
-                if (app.activities.size() == 0 && app.recentTasks.size() == 0
-                        && app.curReceivers.isEmpty() && app.services.size() == 0) {
-                    Slog.i(
-                        TAG, "Exiting empty application process "
-                        + app.toShortString() + " ("
-                        + (app.thread != null ? app.thread.asBinder() : null)
-                        + ")\n");
-                    if (app.pid > 0 && app.pid != MY_PID) {
-                        app.kill("empty", false);
-                    } else if (app.thread != null) {
-                        try {
-                            app.thread.scheduleExit();
-                        } catch (Exception e) {
-                            // Ignore exceptions.
-                        }
-                    }
-                    cleanUpApplicationRecordLocked(app, false, true, -1, false /*replacingPid*/);
-                    mRemovedProcesses.remove(i);
-
-                    if (app.persistent) {
-                        addAppLocked(app.info, null, false, null /* ABI override */);
+    final void trimApplicationsLocked() {
+        // First remove any unused application processes whose package
+        // has been removed.
+        for (int i=mRemovedProcesses.size()-1; i>=0; i--) {
+            final ProcessRecord app = mRemovedProcesses.get(i);
+            if (app.activities.size() == 0 && app.recentTasks.size() == 0
+                    && app.curReceivers.isEmpty() && app.services.size() == 0) {
+                Slog.i(
+                    TAG, "Exiting empty application process "
+                    + app.toShortString() + " ("
+                    + (app.thread != null ? app.thread.asBinder() : null)
+                    + ")\n");
+                if (app.pid > 0 && app.pid != MY_PID) {
+                    app.kill("empty", false);
+                } else if (app.thread != null) {
+                    try {
+                        app.thread.scheduleExit();
+                    } catch (Exception e) {
+                        // Ignore exceptions.
                     }
                 }
-            }
+                cleanUpApplicationRecordLocked(app, false, true, -1, false /*replacingPid*/);
+                mRemovedProcesses.remove(i);
 
-            // Now update the oom adj for all processes.
-            updateOomAdjLocked();
+                if (app.persistent) {
+                    addAppLocked(app.info, null, false, null /* ABI override */);
+                }
+            }
         }
+
+        // Now update the oom adj for all processes. Don't skip this, since other callers
+        // might be depending on it.
+        updateOomAdjLocked();
     }
 
     /** This method sends the specified signal to each of the persistent apps */
@@ -26621,9 +26658,10 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
 
         @Override
-        public void setDeviceIdleWhitelist(int[] appids) {
+        public void setDeviceIdleWhitelist(int[] allAppids, int[] exceptIdleAppids) {
             synchronized (ActivityManagerService.this) {
-                mDeviceIdleWhitelist = appids;
+                mDeviceIdleWhitelist = allAppids;
+                mDeviceIdleExceptIdleWhitelist = exceptIdleAppids;
             }
         }
 

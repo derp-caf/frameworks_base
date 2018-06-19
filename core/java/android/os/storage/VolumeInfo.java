@@ -333,6 +333,10 @@ public class VolumeInfo implements Parcelable {
         if (userPath == null) {
             userPath = new File("/dev/null");
         }
+        File internalPath = getInternalPathForUser(userId);
+        if (internalPath == null) {
+            internalPath = new File("/dev/null");
+        }
 
         String description = null;
         String derivedFsUuid = fsUuid;
@@ -371,7 +375,7 @@ public class VolumeInfo implements Parcelable {
             description = context.getString(android.R.string.unknownName);
         }
 
-        return new StorageVolume(id, userPath, description, isPrimary(), removable,
+        return new StorageVolume(id, userPath, internalPath, description, isPrimary(), removable,
                 emulated, allowMassStorage, maxFileSize, new UserHandle(userId),
                 derivedFsUuid, envState);
     }
@@ -403,8 +407,12 @@ public class VolumeInfo implements Parcelable {
      * {@link #TYPE_EMULATED} or {@link #TYPE_PUBLIC}.
      */
     public @Nullable Intent buildBrowseIntent() {
+        return buildBrowseIntentForUser(UserHandle.myUserId());
+    }
+
+    public @Nullable Intent buildBrowseIntentForUser(int userId) {
         final Uri uri;
-        if (type == VolumeInfo.TYPE_PUBLIC && mountUserId == UserHandle.myUserId()) {
+        if (type == VolumeInfo.TYPE_PUBLIC && mountUserId == userId) {
             uri = DocumentsContract.buildRootUri(DOCUMENT_AUTHORITY, fsUuid);
         } else if (type == VolumeInfo.TYPE_EMULATED && isPrimary()) {
             uri = DocumentsContract.buildRootUri(DOCUMENT_AUTHORITY,

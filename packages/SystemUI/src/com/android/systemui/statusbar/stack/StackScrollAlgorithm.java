@@ -520,6 +520,10 @@ public class StackScrollAlgorithm {
 
         int shelfStart = ambientState.getInnerHeight()
                 - ambientState.getShelf().getIntrinsicHeight();
+        if (ambientState.isAppearing() && !child.isAboveShelf()) {
+            // Don't show none heads-up notifications while in appearing phase.
+            childViewState.yTranslation = Math.max(childViewState.yTranslation, shelfStart);
+        }
         childViewState.yTranslation = Math.min(childViewState.yTranslation, shelfStart);
         if (childViewState.yTranslation >= shelfStart) {
             childViewState.hidden = !child.isExpandAnimationRunning() && !child.hasExpandingChild();

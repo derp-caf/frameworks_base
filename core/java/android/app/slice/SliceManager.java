@@ -23,6 +23,7 @@ import android.annotation.Nullable;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SystemService;
+import android.annotation.WorkerThread;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -217,9 +218,10 @@ public class SliceManager {
      * @return All slices within the space.
      * @see SliceProvider#onGetSliceDescendants(Uri)
      */
+    @WorkerThread
     public @NonNull Collection<Uri> getSliceDescendants(@NonNull Uri uri) {
         ContentResolver resolver = mContext.getContentResolver();
-        try (ContentProviderClient provider = resolver.acquireContentProviderClient(uri)) {
+        try (ContentProviderClient provider = resolver.acquireUnstableContentProviderClient(uri)) {
             Bundle extras = new Bundle();
             extras.putParcelable(SliceProvider.EXTRA_BIND_URI, uri);
             final Bundle res = provider.call(SliceProvider.METHOD_GET_DESCENDANTS, null, extras);
@@ -241,9 +243,10 @@ public class SliceManager {
     public @Nullable Slice bindSlice(@NonNull Uri uri, @NonNull Set<SliceSpec> supportedSpecs) {
         Preconditions.checkNotNull(uri, "uri");
         ContentResolver resolver = mContext.getContentResolver();
-        try (ContentProviderClient provider = resolver.acquireContentProviderClient(uri)) {
+        try (ContentProviderClient provider = resolver.acquireUnstableContentProviderClient(uri)) {
             if (provider == null) {
-                throw new IllegalArgumentException("Unknown URI " + uri);
+                Log.w(TAG, String.format("Unknown URI: %s", uri));
+                return null;
             }
             Bundle extras = new Bundle();
             extras.putParcelable(SliceProvider.EXTRA_BIND_URI, uri);
@@ -302,9 +305,10 @@ public class SliceManager {
         if (authority == null) return null;
         Uri uri = new Uri.Builder().scheme(ContentResolver.SCHEME_CONTENT)
                 .authority(authority).build();
-        try (ContentProviderClient provider = resolver.acquireContentProviderClient(uri)) {
+        try (ContentProviderClient provider = resolver.acquireUnstableContentProviderClient(uri)) {
             if (provider == null) {
-                throw new IllegalArgumentException("Unknown URI " + uri);
+                Log.w(TAG, String.format("Unknown URI: %s", uri));
+                return null;
             }
             Bundle extras = new Bundle();
             extras.putParcelable(SliceProvider.EXTRA_INTENT, intent);
@@ -379,9 +383,10 @@ public class SliceManager {
         if (authority == null) return null;
         Uri uri = new Uri.Builder().scheme(ContentResolver.SCHEME_CONTENT)
                 .authority(authority).build();
-        try (ContentProviderClient provider = resolver.acquireContentProviderClient(uri)) {
+        try (ContentProviderClient provider = resolver.acquireUnstableContentProviderClient(uri)) {
             if (provider == null) {
-                throw new IllegalArgumentException("Unknown URI " + uri);
+                Log.w(TAG, String.format("Unknown URI: %s", uri));
+                return null;
             }
             Bundle extras = new Bundle();
             extras.putParcelable(SliceProvider.EXTRA_INTENT, intent);

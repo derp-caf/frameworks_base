@@ -1776,7 +1776,7 @@ class AlarmManagerService extends SystemService {
             } else if (workSource == null && (callingUid < Process.FIRST_APPLICATION_UID
                     || UserHandle.isSameApp(callingUid, mSystemUiUid)
                     || ((mAppStateTracker != null)
-                        && mAppStateTracker.isUidPowerSaveWhitelisted(callingUid)))) {
+                        && mAppStateTracker.isUidPowerSaveUserWhitelisted(callingUid)))) {
                 flags |= AlarmManager.FLAG_ALLOW_WHILE_IDLE_UNRESTRICTED;
                 flags &= ~AlarmManager.FLAG_ALLOW_WHILE_IDLE;
             }
@@ -3023,20 +3023,26 @@ class AlarmManagerService extends SystemService {
     }
 
     private boolean isBackgroundRestricted(Alarm alarm) {
-        final boolean allowWhileIdle = (alarm.flags & FLAG_ALLOW_WHILE_IDLE) != 0;
+        boolean exemptOnBatterySaver = (alarm.flags & FLAG_ALLOW_WHILE_IDLE) != 0;
         if (alarm.alarmClock != null) {
-            // Don't block alarm clocks
+            // Don't defer alarm clocks
             return false;
         }
-        if (alarm.operation != null
-                && (alarm.operation.isActivity() || alarm.operation.isForegroundService())) {
-            // Don't block starting foreground components
-            return false;
+        if (alarm.operation != null) {
+            if (alarm.operation.isActivity()) {
+                // Don't defer starting actual UI
+                return false;
+            }
+            if (alarm.operation.isForegroundService()) {
+                // FG service alarms are nearly as important; consult AST policy
+                exemptOnBatterySaver = true;
+            }
         }
         final String sourcePackage = alarm.sourcePackage;
         final int sourceUid = alarm.creatorUid;
         return (mAppStateTracker != null) &&
-                mAppStateTracker.areAlarmsRestricted(sourceUid, sourcePackage, allowWhileIdle);
+                mAppStateTracker.areAlarmsRestricted(sourceUid, sourcePackage,
+                        exemptOnBatterySaver);
     }
 
     private native long init();

@@ -314,12 +314,11 @@ public class NotificationInfoTest extends SysuiTestCase {
 
     @Test
     public void testLogBlockingHelperCounter_logsForBlockingHelper() throws Exception {
-        // Bind notification logs an event, so this counts as one invocation for the metrics logger.
         mNotificationInfo.bindNotification(mMockPackageManager, mMockINotificationManager,
                 TEST_PACKAGE_NAME, mNotificationChannel, 1, mSbn, null, null, null, false, true,
                 true);
         mNotificationInfo.logBlockingHelperCounter("HowCanNotifsBeRealIfAppsArent");
-        verify(mMetricsLogger, times(2)).count(anyString(), anyInt());
+        verify(mMetricsLogger, times(1)).count(anyString(), anyInt());
     }
 
     @Test
@@ -509,7 +508,6 @@ public class NotificationInfoTest extends SysuiTestCase {
                         anyString(), eq(TEST_UID), eq(true));
     }
 
-
     @Test
     public void testCloseControls_nonNullCheckSaveListenerDoesntDelayKeepShowing()
             throws Exception {
@@ -538,6 +536,43 @@ public class NotificationInfoTest extends SysuiTestCase {
                         anyString(), eq(TEST_UID), eq(true));
     }
 
+    @Test
+    public void testCloseControls_nonNullCheckSaveListenerDoesntDelayDismiss()
+            throws Exception {
+        NotificationInfo.CheckSaveListener listener =
+                mock(NotificationInfo.CheckSaveListener.class);
+        mNotificationInfo.bindNotification(mMockPackageManager, mMockINotificationManager,
+                TEST_PACKAGE_NAME, mNotificationChannel /* notificationChannel */,
+                10 /* numUniqueChannelsInRow */, mSbn, listener /* checkSaveListener */,
+                null /* onSettingsClick */, null /* onAppSettingsClick */ ,
+                false /* isNonblockable */, true /* isForBlockingHelper */,
+                true /* isUserSentimentNegative */);
+
+        mNotificationInfo.handleCloseControls(true /* save */, false /* force */);
+
+        mTestableLooper.processAllMessages();
+        verify(listener, times(0)).checkSave(any(Runnable.class), eq(mSbn));
+    }
+
+    @Test
+    public void testCloseControls_checkSaveListenerDelaysStopNotifications()
+            throws Exception {
+        NotificationInfo.CheckSaveListener listener =
+                mock(NotificationInfo.CheckSaveListener.class);
+        mNotificationInfo.bindNotification(mMockPackageManager, mMockINotificationManager,
+                TEST_PACKAGE_NAME, mNotificationChannel /* notificationChannel */,
+                10 /* numUniqueChannelsInRow */, mSbn, listener /* checkSaveListener */,
+                null /* onSettingsClick */, null /* onAppSettingsClick */ ,
+                false /* isNonblockable */, true /* isForBlockingHelper */,
+                true /* isUserSentimentNegative */);
+
+        mNotificationInfo.findViewById(R.id.block).performClick();
+        waitForUndoButton();
+        mNotificationInfo.handleCloseControls(true /* save */, false /* force */);
+
+        mTestableLooper.processAllMessages();
+        verify(listener).checkSave(any(Runnable.class), eq(mSbn));
+    }
 
     @Test
     public void testCloseControls_blockingHelperDismissedIfShown() throws Exception {

@@ -23,6 +23,7 @@ import static android.provider.SettingsValidators.COMPONENT_NAME_VALIDATOR;
 import static android.provider.SettingsValidators.LENIENT_IP_ADDRESS_VALIDATOR;
 import static android.provider.SettingsValidators.LOCALE_VALIDATOR;
 import static android.provider.SettingsValidators.NON_NEGATIVE_INTEGER_VALIDATOR;
+import static android.provider.SettingsValidators.NULLABLE_COMPONENT_NAME_VALIDATOR;
 import static android.provider.SettingsValidators.PACKAGE_NAME_VALIDATOR;
 import static android.provider.SettingsValidators.URI_VALIDATOR;
 
@@ -58,6 +59,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.location.LocationManager;
+import android.media.AudioFormat;
 import android.net.ConnectivityManager;
 import android.net.NetworkScoreManager;
 import android.net.Uri;
@@ -123,6 +125,10 @@ public final class Settings {
      * Input: Nothing.
      * <p>
      * Output: Nothing.
+     *
+     * <p class="note">
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
      */
     @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
     public static final String ACTION_APN_SETTINGS = "android.settings.APN_SETTINGS";
@@ -882,6 +888,10 @@ public final class Settings {
      * Applications can also use {@link android.net.ConnectivityManager#getRestrictBackgroundStatus
      * ConnectivityManager#getRestrictBackgroundStatus()} to determine the
      * status of the background data restrictions for them.
+     *
+     * <p class="note">
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
      */
     @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
     public static final String ACTION_IGNORE_BACKGROUND_DATA_RESTRICTIONS_SETTINGS =
@@ -1148,6 +1158,10 @@ public final class Settings {
      * Input: Nothing.
      * <p>
      * Output: Nothing.
+     *
+     * <p class="note">
+     * In some cases, a matching Activity may not exist, so ensure you
+     * safeguard against this.
      */
     @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
     public static final String ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS
@@ -3103,10 +3117,10 @@ public final class Settings {
 
         private static final Validator FONT_SCALE_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 try {
                     return Float.parseFloat(value) >= 0;
-                } catch (NumberFormatException e) {
+                } catch (NumberFormatException | NullPointerException e) {
                     return false;
                 }
             }
@@ -3644,11 +3658,11 @@ public final class Settings {
         /** @hide */
         public static final Validator DATE_FORMAT_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 try {
                     new SimpleDateFormat(value);
                     return true;
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException | NullPointerException e) {
                     return false;
                 }
             }
@@ -4055,7 +4069,7 @@ public final class Settings {
         /** @hide */
         public static final Validator EGG_MODE_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 try {
                     return Long.parseLong(value) >= 0;
                 } catch (NumberFormatException e) {
@@ -4176,6 +4190,7 @@ public final class Settings {
             PUBLIC_SETTINGS.add(DIM_SCREEN);
             PUBLIC_SETTINGS.add(SCREEN_OFF_TIMEOUT);
             PUBLIC_SETTINGS.add(SCREEN_BRIGHTNESS);
+            PUBLIC_SETTINGS.add(SCREEN_BRIGHTNESS_FOR_VR);
             PUBLIC_SETTINGS.add(SCREEN_BRIGHTNESS_MODE);
             PUBLIC_SETTINGS.add(MODE_RINGER_STREAMS_AFFECTED);
             PUBLIC_SETTINGS.add(MUTE_STREAMS_AFFECTED);
@@ -5440,7 +5455,8 @@ public final class Settings {
         @TestApi
         public static final String AUTOFILL_SERVICE = "autofill_service";
 
-        private static final Validator AUTOFILL_SERVICE_VALIDATOR = COMPONENT_NAME_VALIDATOR;
+        private static final Validator AUTOFILL_SERVICE_VALIDATOR =
+                NULLABLE_COMPONENT_NAME_VALIDATOR;
 
         /**
          * Boolean indicating if Autofill supports field classification.
@@ -5671,6 +5687,16 @@ public final class Settings {
          * @hide
          */
         public static final int LOCATION_CHANGER_QUICK_SETTINGS = 2;
+
+        /**
+         * Setting to configure Wifi disconnect delay duration in seconds.
+         * @hide
+         **/
+        public static final String WIFI_DISCONNECT_DELAY_DURATION =
+                "wifi_disconnect_delay_duration";
+
+        private static final Validator WIFI_DISCONNECT_DELAY_DURATION_VALIDATOR =
+                NON_NEGATIVE_INTEGER_VALIDATOR;
 
         /**
          * Location access disabled.
@@ -5938,7 +5964,7 @@ public final class Settings {
                 "accessibility_shortcut_target_service";
 
         private static final Validator ACCESSIBILITY_SHORTCUT_TARGET_SERVICE_VALIDATOR =
-                COMPONENT_NAME_VALIDATOR;
+                NULLABLE_COMPONENT_NAME_VALIDATOR;
 
         /**
          * Setting specifying the accessibility service or feature to be toggled via the
@@ -5953,7 +5979,7 @@ public final class Settings {
         private static final Validator ACCESSIBILITY_BUTTON_TARGET_COMPONENT_VALIDATOR =
                 new Validator() {
                     @Override
-                    public boolean validate(String value) {
+                    public boolean validate(@Nullable String value) {
                         // technically either ComponentName or class name, but there's proper value
                         // validation at callsites, so allow any non-null string
                         return value != null;
@@ -5987,6 +6013,23 @@ public final class Settings {
 
         private static final Validator TOUCH_EXPLORATION_GRANTED_ACCESSIBILITY_SERVICES_VALIDATOR =
                 new SettingsValidators.ComponentNameListValidator(":");
+
+        /**
+         * Whether the hush gesture has ever been used // TODO: beverlyt
+         * @hide
+         */
+        public static final String HUSH_GESTURE_USED = "hush_gesture_used";
+
+        private static final Validator HUSH_GESTURE_USED_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
+         * Number of times the user has manually clicked the ringer toggle
+         * @hide
+         */
+        public static final String MANUAL_RINGER_TOGGLE_COUNT = "manual_ringer_toggle_count";
+
+        private static final Validator MANUAL_RINGER_TOGGLE_COUNT_VALIDATOR =
+                NON_NEGATIVE_INTEGER_VALIDATOR;
 
         /**
          * Uri of the slice that's presented on the keyguard.
@@ -6453,7 +6496,7 @@ public final class Settings {
 
         private static final Validator TTS_DEFAULT_LOCALE_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 if (value == null || value.length() == 0) {
                     return false;
                 }
@@ -7083,6 +7126,35 @@ public final class Settings {
         public static final String UI_NIGHT_MODE = "ui_night_mode";
 
         /**
+         * The current device UI theme mode effect SystemUI and Launcher.<br/>
+         * <b>Values:</b><br/>
+         * 0 - The mode that theme will controlled by wallpaper color.<br/>
+         * 1 - The mode that will always light theme.<br/>
+         * 2 - The mode that will always dark theme.<br/>
+         *
+         * @hide
+         */
+        public static final String THEME_MODE = "theme_mode";
+
+        /**
+         * THEME_MODE value for wallpaper mode.
+         * @hide
+         */
+        public static final int THEME_MODE_WALLPAPER = 0;
+
+        /**
+         * THEME_MODE value for light theme mode.
+         * @hide
+         */
+        public static final int THEME_MODE_LIGHT = 1;
+
+        /**
+         * THEME_MODE value for dark theme mode.
+         * @hide
+         */
+        public static final int THEME_MODE_DARK = 2;
+
+        /**
          * Whether screensavers are enabled.
          * @hide
          */
@@ -7691,7 +7763,7 @@ public final class Settings {
 
         private static final Validator QS_TILES_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 if (value == null) {
                     return false;
                 }
@@ -7750,7 +7822,7 @@ public final class Settings {
 
         private static final Validator QS_AUTO_ADDED_TILES_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 if (value == null) {
                     return false;
                 }
@@ -7971,7 +8043,10 @@ public final class Settings {
             SCREENSAVER_ACTIVATE_ON_SLEEP,
             LOCKDOWN_IN_POWER_MENU,
             SHOW_FIRST_CRASH_DIALOG_DEV_OPTION,
-            VOLUME_HUSH_GESTURE
+            VOLUME_HUSH_GESTURE,
+            MANUAL_RINGER_TOGGLE_COUNT,
+            HUSH_GESTURE_USED,
+            WIFI_DISCONNECT_DELAY_DURATION
         };
 
         /**
@@ -8118,6 +8193,9 @@ public final class Settings {
                     ENABLED_NOTIFICATION_ASSISTANT_VALIDATOR); //legacy restore setting
             VALIDATORS.put(ENABLED_NOTIFICATION_POLICY_ACCESS_PACKAGES,
                     ENABLED_NOTIFICATION_POLICY_ACCESS_PACKAGES_VALIDATOR); //legacy restore setting
+            VALIDATORS.put(HUSH_GESTURE_USED, HUSH_GESTURE_USED_VALIDATOR);
+            VALIDATORS.put(MANUAL_RINGER_TOGGLE_COUNT, MANUAL_RINGER_TOGGLE_COUNT_VALIDATOR);
+            VALIDATORS.put(WIFI_DISCONNECT_DELAY_DURATION, WIFI_DISCONNECT_DELAY_DURATION_VALIDATOR);
         }
 
         /**
@@ -8598,6 +8676,14 @@ public final class Settings {
         private static final Validator CHARGING_SOUNDS_ENABLED_VALIDATOR = BOOLEAN_VALIDATOR;
 
         /**
+         * Whether to vibrate for wireless charging events.
+         * @hide
+         */
+        public static final String CHARGING_VIBRATION_ENABLED = "charging_vibration_enabled";
+
+        private static final Validator CHARGING_VIBRATION_ENABLED_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
          * Whether we keep the device on while the device is plugged in.
          * Supported values are:
          * <ul>
@@ -8612,7 +8698,7 @@ public final class Settings {
 
         private static final Validator STAY_ON_WHILE_PLUGGED_IN_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 try {
                     int val = Integer.parseInt(value);
                     return (val == 0)
@@ -9285,7 +9371,7 @@ public final class Settings {
         * values.
         * Consists of a comma seperated list of strings:
         * "name,apn,proxy,port,username,password,server,mmsc,mmsproxy,mmsport,mcc,mnc,auth,type"
-        * note that empty fields can be ommitted: "name,apn,,,,,,,,,310,260,,DUN"
+        * note that empty fields can be omitted: "name,apn,,,,,,,,,310,260,,DUN"
         * @hide
         */
        public static final String TETHER_DUN_APN = "tether_dun_apn";
@@ -9646,7 +9732,7 @@ public final class Settings {
 
         private static final Validator USE_OPEN_WIFI_PACKAGE_VALIDATOR = new Validator() {
             @Override
-            public boolean validate(String value) {
+            public boolean validate(@Nullable String value) {
                 return (value == null) || PACKAGE_NAME_VALIDATOR.validate(value);
             }
         };
@@ -10210,6 +10296,15 @@ public final class Settings {
                 "captive_portal_other_fallback_urls";
 
         /**
+         * A list of captive portal detection specifications used in addition to the fallback URLs.
+         * Each spec has the format url@@/@@statusCodeRegex@@/@@contentRegex. Specs are separated
+         * by "@@,@@".
+         * @hide
+         */
+        public static final String CAPTIVE_PORTAL_FALLBACK_PROBE_SPECS =
+                "captive_portal_fallback_probe_specs";
+
+        /**
          * Whether to use HTTPS for network validation. This is enabled by default and the setting
          * needs to be set to 0 to disable it. This setting is a misnomer because captive portals
          * don't actually use HTTPS, but it's consistent with the other settings.
@@ -10346,6 +10441,17 @@ public final class Settings {
 
         private static final Validator PRIVATE_DNS_SPECIFIER_VALIDATOR = ANY_STRING_VALIDATOR;
 
+        /**
+          * Forced override of the default mode (hardcoded as "automatic", nee "opportunistic").
+          * This allows changing the default mode without effectively disabling other modes,
+          * all of which require explicit user action to enable/configure. See also b/79719289.
+          *
+          * Value is a string, suitable for assignment to PRIVATE_DNS_MODE above.
+          *
+          * {@hide}
+          */
+        public static final String PRIVATE_DNS_DEFAULT_MODE = "private_dns_default_mode";
+
         /** {@hide} */
         public static final String
                 BLUETOOTH_HEADSET_PRIORITY_PREFIX = "bluetooth_headset_priority_";
@@ -10435,7 +10541,9 @@ public final class Settings {
          * The following keys are supported:
          *
          * <pre>
-         * state_settle_time                (long)
+         * top_state_settle_time                (long)
+         * fg_service_state_settle_time         (long)
+         * bg_state_settle_time                 (long)
          * </pre>
          *
          * <p>
@@ -10911,21 +11019,13 @@ public final class Settings {
                 = "forced_app_standby_for_small_battery_enabled";
 
         /**
-         * Whether or not to enable the Off Body, Radios Off feature on small battery devices.
+         * Whether or not to enable the User Absent, Radios Off feature on small battery devices.
          * Type: int (0 for false, 1 for true)
          * Default: 0
          * @hide
          */
-        public static final String OFF_BODY_RADIOS_OFF_FOR_SMALL_BATTERY_ENABLED
-                = "off_body_radios_off_for_small_battery_enabled";
-
-        /**
-         * How long after the device goes off body to disable radios, in milliseconds.
-         * Type: long
-         * Default: 10 minutes
-         * @hide
-         */
-        public static final String OFF_BODY_RADIOS_OFF_DELAY_MS = "off_body_radios_off_delay_ms";
+        public static final String USER_ABSENT_RADIOS_OFF_FOR_SMALL_BATTERY_ENABLED
+                = "user_absent_radios_off_for_small_battery_enabled";
 
         /**
          * Whether or not to turn on Wifi when proxy is disconnected.
@@ -11298,15 +11398,66 @@ public final class Settings {
          public static final int ENCODED_SURROUND_OUTPUT_ALWAYS = 2;
 
         /**
+         * Surround sound formats are available according to the choice
+         * of user, even if they are not detected by the hardware. Those
+         * formats will be reported as part of the HDMI output capability.
+         * Applications are then free to use either PCM or encoded output.
+         *
+         * An example use case would be an AVR that doesn't report a surround
+         * format while the user knows the AVR does support it.
+         * @hide
+         */
+        public static final int ENCODED_SURROUND_OUTPUT_MANUAL = 3;
+
+        /**
          * Set to ENCODED_SURROUND_OUTPUT_AUTO,
-         * ENCODED_SURROUND_OUTPUT_NEVER or
-         * ENCODED_SURROUND_OUTPUT_ALWAYS
+         * ENCODED_SURROUND_OUTPUT_NEVER,
+         * ENCODED_SURROUND_OUTPUT_ALWAYS or
+         * ENCODED_SURROUND_OUTPUT_MANUAL
          * @hide
          */
         public static final String ENCODED_SURROUND_OUTPUT = "encoded_surround_output";
 
         private static final Validator ENCODED_SURROUND_OUTPUT_VALIDATOR =
-                new SettingsValidators.DiscreteValueValidator(new String[] {"0", "1", "2"});
+                new SettingsValidators.DiscreteValueValidator(new String[] {"0", "1", "2", "3"});
+
+        /**
+         * Surround sounds formats that are enabled when ENCODED_SURROUND_OUTPUT is set to
+         * ENCODED_SURROUND_OUTPUT_MANUAL. Encoded as comma separated list. Allowed values
+         * are the format constants defined in AudioFormat.java. Ex:
+         *
+         * "5,6"
+         *
+         * @hide
+         */
+        public static final String ENCODED_SURROUND_OUTPUT_ENABLED_FORMATS =
+                "encoded_surround_output_enabled_formats";
+
+        private static final Validator ENCODED_SURROUND_OUTPUT_ENABLED_FORMATS_VALIDATOR =
+                new Validator() {
+            @Override
+            public boolean validate(@Nullable String value) {
+                try {
+                    String[] surroundFormats = TextUtils.split(value, ",");
+                    for (String format : surroundFormats) {
+                        int audioFormat = Integer.valueOf(format);
+                        boolean isSurroundFormat = false;
+                        for (int sf : AudioFormat.SURROUND_SOUND_ENCODING) {
+                            if (sf == audioFormat) {
+                                isSurroundFormat = true;
+                                break;
+                            }
+                        }
+                        if (!isSurroundFormat) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            }
+        };
 
         /**
          * Persisted safe headphone volume management state by AudioService
@@ -11465,6 +11616,13 @@ public final class Settings {
 
         /** @hide */ public static final int EMULATE_DISPLAY_CUTOUT_OFF = 0;
         /** @hide */ public static final int EMULATE_DISPLAY_CUTOUT_ON = 1;
+
+        /**
+         * A colon separated list of keys for Settings Slices.
+         *
+         * @hide
+         */
+        public static final String BLOCKED_SLICES = "blocked_slices";
 
         /**
          * Defines global zen mode.  ZEN_MODE_OFF, ZEN_MODE_IMPORTANT_INTERRUPTIONS,
@@ -11953,12 +12111,14 @@ public final class Settings {
             CALL_AUTO_RETRY,
             DOCK_AUDIO_MEDIA_ENABLED,
             ENCODED_SURROUND_OUTPUT,
+            ENCODED_SURROUND_OUTPUT_ENABLED_FORMATS,
             LOW_POWER_MODE_TRIGGER_LEVEL,
             BLUETOOTH_ON,
             PRIVATE_DNS_MODE,
             PRIVATE_DNS_SPECIFIER,
             SOFT_AP_TIMEOUT_ENABLED,
             ZEN_DURATION,
+            CHARGING_VIBRATION_ENABLED,
         };
 
         /**
@@ -11989,6 +12149,8 @@ public final class Settings {
             VALIDATORS.put(CALL_AUTO_RETRY, CALL_AUTO_RETRY_VALIDATOR);
             VALIDATORS.put(DOCK_AUDIO_MEDIA_ENABLED, DOCK_AUDIO_MEDIA_ENABLED_VALIDATOR);
             VALIDATORS.put(ENCODED_SURROUND_OUTPUT, ENCODED_SURROUND_OUTPUT_VALIDATOR);
+            VALIDATORS.put(ENCODED_SURROUND_OUTPUT_ENABLED_FORMATS,
+                    ENCODED_SURROUND_OUTPUT_ENABLED_FORMATS_VALIDATOR);
             VALIDATORS.put(LOW_POWER_MODE_TRIGGER_LEVEL, LOW_POWER_MODE_TRIGGER_LEVEL_VALIDATOR);
             VALIDATORS.put(LOW_POWER_MODE_TRIGGER_LEVEL_MAX,
                     LOW_POWER_MODE_TRIGGER_LEVEL_VALIDATOR);
@@ -12000,6 +12162,7 @@ public final class Settings {
                     WIFI_CARRIER_NETWORKS_AVAILABLE_NOTIFICATION_ON_VALIDATOR);
             VALIDATORS.put(APP_AUTO_RESTRICTION_ENABLED, APP_AUTO_RESTRICTION_ENABLED_VALIDATOR);
             VALIDATORS.put(ZEN_DURATION, ZEN_DURATION_VALIDATOR);
+            VALIDATORS.put(CHARGING_VIBRATION_ENABLED, CHARGING_VIBRATION_ENABLED_VALIDATOR);
         }
 
         /**
@@ -12728,6 +12891,25 @@ public final class Settings {
          * @hide
          */
         public static final String SHOW_ZEN_UPGRADE_NOTIFICATION = "show_zen_upgrade_notification";
+
+        /**
+         * If nonzero, will show the zen update settings suggestion.
+         * @hide
+         */
+        public static final String SHOW_ZEN_SETTINGS_SUGGESTION = "show_zen_settings_suggestion";
+
+        /**
+         * If nonzero, zen has not been updated to reflect new changes.
+         * @hide
+         */
+        public static final String ZEN_SETTINGS_UPDATED = "zen_settings_updated";
+
+        /**
+         * If nonzero, zen setting suggestion has beem viewed by user
+         * @hide
+         */
+        public static final String ZEN_SETTINGS_SUGGESTION_VIEWED =
+                "zen_settings_suggestion_viewed";
 
         /**
          * Backup and restore agent timeout parameters.

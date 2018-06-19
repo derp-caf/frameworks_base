@@ -115,6 +115,7 @@ public class UsageStatsService extends SystemService implements
     PackageManagerInternal mPackageManagerInternal;
     PackageMonitor mPackageMonitor;
     IDeviceIdleController mDeviceIdleController;
+    // Do not use directly. Call getDpmInternal() instead
     DevicePolicyManagerInternal mDpmInternal;
 
     private final SparseArray<UserUsageStatsService> mUserState = new SparseArray<>();
@@ -159,7 +160,6 @@ public class UsageStatsService extends SystemService implements
         mUserManager = (UserManager) getContext().getSystemService(Context.USER_SERVICE);
         mPackageManager = getContext().getPackageManager();
         mPackageManagerInternal = LocalServices.getService(PackageManagerInternal.class);
-        mDpmInternal = LocalServices.getService(DevicePolicyManagerInternal.class);
         mHandler = new H(BackgroundThread.get().getLooper());
 
         mAppStandby = new AppStandbyController(getContext(), BackgroundThread.get().getLooper());
@@ -209,6 +209,8 @@ public class UsageStatsService extends SystemService implements
     public void onBootPhase(int phase) {
         if (phase == PHASE_SYSTEM_SERVICES_READY) {
             mAppStandby.onBootPhase(phase);
+            // initialize mDpmInternal
+            getDpmInternal();
 
             mDeviceIdleController = IDeviceIdleController.Stub.asInterface(
                     ServiceManager.getService(Context.DEVICE_IDLE_CONTROLLER));
@@ -226,6 +228,13 @@ public class UsageStatsService extends SystemService implements
                 Slog.w(TAG, "Missing procfs interface: " + KERNEL_COUNTER_FILE);
             }
         }
+    }
+
+    private DevicePolicyManagerInternal getDpmInternal() {
+        if (mDpmInternal == null) {
+            mDpmInternal = LocalServices.getService(DevicePolicyManagerInternal.class);
+        }
+        return mDpmInternal;
     }
 
     private class UserActionsReceiver extends BroadcastReceiver {
@@ -576,6 +585,9 @@ public class UsageStatsService extends SystemService implements
                         flushToDiskLocked();
                         pw.println("Flushed stats to disk");
                         return;
+                    } else if ("is-app-standby-enabled".equals(arg)) {
+                        pw.println(mAppStandby.mAppIdleEnabled);
+                        return;
                     } else if (arg != null && !arg.startsWith("-")) {
                         // Anything else that doesn't start with '-' is a pkg to filter
                         pkg = arg;
@@ -675,15 +687,39 @@ public class UsageStatsService extends SystemService implements
 
         private boolean hasObserverPermission(String callingPackage) {
             final int callingUid = Binder.getCallingUid();
+            DevicePolicyManagerInternal dpmInternal = getDpmInternal();
             if (callingUid == Process.SYSTEM_UID
-                    || (mDpmInternal != null
-                        && mDpmInternal.isActiveAdminWithPolicy(callingUid,
+                    || (dpmInternal != null
+                        && dpmInternal.isActiveAdminWithPolicy(callingUid,
                             DeviceAdminInfo.USES_POLICY_PROFILE_OWNER))) {
                 // Caller is the system or the profile owner, so proceed.
                 return true;
             }
             return getContext().checkCallingPermission(Manifest.permission.OBSERVE_APP_USAGE)
                     == PackageManager.PERMISSION_GRANTED;
+        }
+
+        private void checkCallerIsSystemOrSameApp(String pkg) {
+            if (isCallingUidSystem()) {
+                return;
+            }
+            checkCallerIsSameApp(pkg);
+        }
+
+        private void checkCallerIsSameApp(String pkg) {
+            final int callingUid = Binder.getCallingUid();
+            final int callingUserId = UserHandle.getUserId(callingUid);
+
+            if (mPackageManagerInternal.getPackageUid(pkg, /*flags=*/ 0,
+                    callingUserId) != callingUid) {
+                throw new SecurityException("Calling uid " + pkg + " cannot query events"
+                        + "for package " + pkg);
+            }
+        }
+
+        private boolean isCallingUidSystem() {
+            final int uid = Binder.getCallingUid();
+            return uid == Process.SYSTEM_UID;
         }
 
         @Override
@@ -779,14 +815,57 @@ public class UsageStatsService extends SystemService implements
             final int callingUid = Binder.getCallingUid();
             final int callingUserId = UserHandle.getUserId(callingUid);
 
-            if (mPackageManagerInternal.getPackageUid(callingPackage, PackageManager.MATCH_ANY_USER,
-                    callingUserId) != callingUid) {
-                throw new SecurityException("Calling uid " + callingPackage + " cannot query events"
-                        + "for package " + callingPackage);
-            }
+            checkCallerIsSameApp(callingPackage);
             final long token = Binder.clearCallingIdentity();
             try {
                 return UsageStatsService.this.queryEventsForPackage(callingUserId, beginTime,
+                        endTime, callingPackage);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @Override
+        public UsageEvents queryEventsForUser(long beginTime, long endTime, int userId,
+                String callingPackage) {
+            if (!hasPermission(callingPackage)) {
+                return null;
+            }
+
+            if (userId != UserHandle.getCallingUserId()) {
+                getContext().enforceCallingPermission(
+                        Manifest.permission.INTERACT_ACROSS_USERS_FULL,
+                        "No permission to query usage stats for this user");
+            }
+
+            final boolean obfuscateInstantApps = shouldObfuscateInstantAppsForCaller(
+                    Binder.getCallingUid(), UserHandle.getCallingUserId());
+
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return UsageStatsService.this.queryEvents(userId, beginTime, endTime,
+                        obfuscateInstantApps);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+        }
+
+        @Override
+        public UsageEvents queryEventsForPackageForUser(long beginTime, long endTime,
+                int userId, String pkg, String callingPackage) {
+            if (!hasPermission(callingPackage)) {
+                return null;
+            }
+            if (userId != UserHandle.getCallingUserId()) {
+                getContext().enforceCallingPermission(
+                        Manifest.permission.INTERACT_ACROSS_USERS_FULL,
+                        "No permission to query usage stats for this user");
+            }
+            checkCallerIsSystemOrSameApp(pkg);
+
+            final long token = Binder.clearCallingIdentity();
+            try {
+                return UsageStatsService.this.queryEventsForPackage(userId, beginTime,
                         endTime, callingPackage);
             } finally {
                 Binder.restoreCallingIdentity(token);
@@ -887,6 +966,7 @@ public class UsageStatsService extends SystemService implements
             } catch (RemoteException re) {
                 throw re.rethrowFromSystemServer();
             }
+            final boolean shellCaller = callingUid == 0 || callingUid == Process.SHELL_UID;
             final boolean systemCaller = UserHandle.isCore(callingUid);
             final int reason = systemCaller
                     ? UsageStatsManager.REASON_MAIN_FORCED
@@ -905,7 +985,7 @@ public class UsageStatsService extends SystemService implements
                                     + ")");
                 }
                 mAppStandby.setAppStandbyBucket(packageName, userId, bucket, reason,
-                        SystemClock.elapsedRealtime());
+                        SystemClock.elapsedRealtime(), shellCaller);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
@@ -972,7 +1052,7 @@ public class UsageStatsService extends SystemService implements
                         throw new IllegalArgumentException("Cannot set your own standby bucket");
                     }
                     mAppStandby.setAppStandbyBucket(packageName, userId, bucket, reason,
-                            elapsedRealtime);
+                            elapsedRealtime, shellCaller);
                 }
             } finally {
                 Binder.restoreCallingIdentity(token);
@@ -1041,9 +1121,6 @@ public class UsageStatsService extends SystemService implements
 
             if (packages == null || packages.length == 0) {
                 throw new IllegalArgumentException("Must specify at least one package");
-            }
-            if (timeLimitMs <= 0) {
-                throw new IllegalArgumentException("Time limit must be > 0");
             }
             if (callbackIntent == null) {
                 throw new NullPointerException("callbackIntent can't be null");
@@ -1291,6 +1368,11 @@ public class UsageStatsService extends SystemService implements
         @Override
         public void onAdminDataAvailable() {
             mAppStandby.onAdminDataAvailable();
+        }
+
+        @Override
+        public void reportExemptedSyncScheduled(String packageName, int userId) {
+            mAppStandby.postReportExemptedSyncScheduled(packageName, userId);
         }
 
         @Override

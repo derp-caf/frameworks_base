@@ -499,4 +499,14 @@ public class BluetoothEventManager {
             }
         }
     }
+
+    void dispatchProfileConnectionStateChanged(CachedBluetoothDevice device, int state,
+            int bluetoothProfile) {
+        synchronized (mCallbacks) {
+            for (BluetoothCallback callback : mCallbacks) {
+                callback.onProfileConnectionStateChanged(device, state, bluetoothProfile);
+            }
+        }
+        mDeviceManager.onProfileConnectionStateChanged(device, state, bluetoothProfile);
+    }
 }

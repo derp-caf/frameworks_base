@@ -93,6 +93,11 @@ public class HearingAidProfile implements LocalBluetoothProfile {
         return mIsProfileReady;
     }
 
+    @Override
+    public int getProfileId() {
+        return BluetoothProfile.HEARING_AID;
+    }
+
     HearingAidProfile(Context context, LocalBluetoothAdapter adapter,
             CachedBluetoothDeviceManager deviceManager,
             LocalBluetoothProfileManager profileManager) {
@@ -105,7 +110,7 @@ public class HearingAidProfile implements LocalBluetoothProfile {
     }
 
     public boolean isConnectable() {
-        return true;
+        return false;
     }
 
     public boolean isAutoConnectable() {

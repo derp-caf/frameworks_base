@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
@@ -1329,6 +1330,8 @@ public class AudioManager {
      */
     public void setSpeakerphoneOn(boolean on){
         final IAudioService service = getService();
+        Log.i(TAG, "In setSpeakerphoneOn(), on: " + on + ", calling application: "
+                    + mApplicationContext.getOpPackageName());
         try {
             service.setSpeakerphoneOn(on);
         } catch (RemoteException e) {
@@ -1342,6 +1345,8 @@ public class AudioManager {
      * @return true if speakerphone is on, false if it's off
      */
     public boolean isSpeakerphoneOn() {
+        Log.i(TAG, "In isSpeakerphoneOn(), calling application: "
+                    + mApplicationContext.getOpPackageName());
         final IAudioService service = getService();
         try {
             return service.isSpeakerphoneOn();
@@ -1446,8 +1451,12 @@ public class AudioManager {
      * @see #startBluetoothSco()
     */
     public boolean isBluetoothScoAvailableOffCall() {
-        return getContext().getResources().getBoolean(
-               com.android.internal.R.bool.config_bluetooth_sco_off_call);
+        boolean retval;
+        retval = getContext().getResources().getBoolean(
+                  com.android.internal.R.bool.config_bluetooth_sco_off_call);
+        Log.i(TAG, "In isBluetoothScoAvailableOffCall(), calling appilication: " +
+              mApplicationContext.getOpPackageName()+", return value: " + retval);
+        return retval;
     }
 
     /**
@@ -1497,6 +1506,8 @@ public class AudioManager {
      */
     public void startBluetoothSco(){
         final IAudioService service = getService();
+        Log.i(TAG, "In startbluetoothSco(), calling application: "
+                     + mApplicationContext.getOpPackageName());
         try {
             service.startBluetoothSco(mICallBack,
                     getContext().getApplicationInfo().targetSdkVersion);
@@ -1521,6 +1532,8 @@ public class AudioManager {
      * @see #ACTION_SCO_AUDIO_STATE_UPDATED
      */
     public void startBluetoothScoVirtualCall() {
+        Log.i(TAG, "In startBluetoothScoVirtualCall(), calling application: "
+                    + mApplicationContext.getOpPackageName());
         final IAudioService service = getService();
         try {
             service.startBluetoothScoVirtualCall(mICallBack);
@@ -1541,6 +1554,8 @@ public class AudioManager {
     // Also used for connections started with {@link #startBluetoothScoVirtualCall()}
     public void stopBluetoothSco(){
         final IAudioService service = getService();
+        Log.i(TAG, "In stopBluetoothSco(), calling application: "
+                    + mApplicationContext.getOpPackageName());
         try {
             service.stopBluetoothSco(mICallBack);
         } catch (RemoteException e) {
@@ -1559,6 +1574,8 @@ public class AudioManager {
      */
     public void setBluetoothScoOn(boolean on){
         final IAudioService service = getService();
+        Log.i(TAG, "In setBluetoothScoOn(), on: " + on + ", calling application: "
+                    + mApplicationContext.getOpPackageName());
         try {
             service.setBluetoothScoOn(on);
         } catch (RemoteException e) {
@@ -1574,6 +1591,8 @@ public class AudioManager {
      */
     public boolean isBluetoothScoOn() {
         final IAudioService service = getService();
+        Log.i(TAG, "In isBluetoothScoOn(), calling application: "
+                    + mApplicationContext.getOpPackageName());
         try {
             return service.isBluetoothScoOn();
         } catch (RemoteException e) {
@@ -3938,6 +3957,7 @@ public class AudioManager {
      * @param device Bluetooth device connected/disconnected
      * @param state  new connection state (BluetoothProfile.STATE_xxx)
      * @param profile profile for the A2DP device
+     * @param a2dpVolume New volume for the connecting device. Does nothing if disconnecting.
      * (either {@link android.bluetooth.BluetoothProfile.A2DP} or
      * {@link android.bluetooth.BluetoothProfile.A2DP_SINK})
      * @param suppressNoisyIntent if true the
@@ -3947,12 +3967,13 @@ public class AudioManager {
      * {@hide}
      */
     public int setBluetoothA2dpDeviceConnectionStateSuppressNoisyIntent(
-                BluetoothDevice device, int state, int profile, boolean suppressNoisyIntent) {
+                BluetoothDevice device, int state, int profile,
+                boolean suppressNoisyIntent, int a2dpVolume) {
         final IAudioService service = getService();
         int delay = 0;
         try {
             delay = service.setBluetoothA2dpDeviceConnectionStateSuppressNoisyIntent(device,
-                state, profile, suppressNoisyIntent);
+                state, profile, suppressNoisyIntent, a2dpVolume);
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
@@ -4716,7 +4737,7 @@ public class AudioManager {
                 NativeEventHandlerDelegate delegate =
                         new NativeEventHandlerDelegate(callback, handler);
                 mDeviceCallbacks.put(callback, delegate);
-                broadcastDeviceListChange(delegate.getHandler());
+                broadcastDeviceListChange_sync(delegate.getHandler());
             }
         }
     }
@@ -4835,9 +4856,9 @@ public class AudioManager {
 
     /**
      * Internal method to compute and generate add/remove messages and then send to any
-     * registered callbacks.
+     * registered callbacks. Must be called synchronized on mDeviceCallbacks.
      */
-    private void broadcastDeviceListChange(Handler handler) {
+    private void broadcastDeviceListChange_sync(Handler handler) {
         int status;
 
         // Get the new current set of ports
@@ -4859,20 +4880,18 @@ public class AudioManager {
             AudioDeviceInfo[] removed_devices =
                     calcListDeltas(current_ports, mPreviousPorts, GET_DEVICES_ALL);
             if (added_devices.length != 0 || removed_devices.length != 0) {
-                synchronized (mDeviceCallbacks) {
-                    for (int i = 0; i < mDeviceCallbacks.size(); i++) {
-                        handler = mDeviceCallbacks.valueAt(i).getHandler();
-                        if (handler != null) {
-                            if (removed_devices.length != 0) {
-                                handler.sendMessage(Message.obtain(handler,
-                                                                   MSG_DEVICES_DEVICES_REMOVED,
-                                                                   removed_devices));
-                            }
-                            if (added_devices.length != 0) {
-                                handler.sendMessage(Message.obtain(handler,
-                                                                   MSG_DEVICES_DEVICES_ADDED,
-                                                                   added_devices));
-                            }
+                for (int i = 0; i < mDeviceCallbacks.size(); i++) {
+                    handler = mDeviceCallbacks.valueAt(i).getHandler();
+                    if (handler != null) {
+                        if (removed_devices.length != 0) {
+                            handler.sendMessage(Message.obtain(handler,
+                                    MSG_DEVICES_DEVICES_REMOVED,
+                                    removed_devices));
+                        }
+                        if (added_devices.length != 0) {
+                            handler.sendMessage(Message.obtain(handler,
+                                    MSG_DEVICES_DEVICES_ADDED,
+                                    added_devices));
                         }
                     }
                 }
@@ -4888,7 +4907,9 @@ public class AudioManager {
     private class OnAmPortUpdateListener implements AudioManager.OnAudioPortUpdateListener {
         static final String TAG = "OnAmPortUpdateListener";
         public void onAudioPortListUpdate(AudioPort[] portList) {
-            broadcastDeviceListChange(null);
+            synchronized (mDeviceCallbacks) {
+                broadcastDeviceListChange_sync(null);
+            }
         }
 
         /**
@@ -4902,7 +4923,9 @@ public class AudioManager {
          * Callback method called when the mediaserver dies
          */
         public void onServiceDied() {
-            broadcastDeviceListChange(null);
+            synchronized (mDeviceCallbacks) {
+                broadcastDeviceListChange_sync(null);
+            }
         }
     }
 
@@ -5013,6 +5036,66 @@ public class AudioManager {
             throw e.rethrowFromSystemServer();
         }
     }
+
+    /**
+     * @hide
+     * Returns all surround formats.
+     * @return a map where the key is a surround format and
+     * the value indicates the surround format is enabled or not
+     */
+    public Map<Integer, Boolean> getSurroundFormats() {
+        Map<Integer, Boolean> surroundFormats = new HashMap<>();
+        int status = AudioSystem.getSurroundFormats(surroundFormats, false);
+        if (status != AudioManager.SUCCESS) {
+            // fail and bail!
+            Log.e(TAG, "getSurroundFormats failed:" + status);
+            return new HashMap<Integer, Boolean>(); // Always return a map.
+        }
+        return surroundFormats;
+    }
+
+    /**
+     * @hide
+     * Set a certain surround format as enabled or not.
+     * @param audioFormat a surround format, the value is one of
+     *        {@link AudioFormat#ENCODING_AC3}, {@link AudioFormat#ENCODING_E_AC3},
+     *        {@link AudioFormat#ENCODING_DTS}, {@link AudioFormat#ENCODING_DTS_HD},
+     *        {@link AudioFormat#ENCODING_AAC_LC}, {@link AudioFormat#ENCODING_DOLBY_TRUEHD},
+     *        {@link AudioFormat#ENCODING_E_AC3_JOC}. Once {@link AudioFormat#ENCODING_AAC_LC} is
+     *        set as enabled, {@link AudioFormat#ENCODING_AAC_LC},
+     *        {@link AudioFormat#ENCODING_AAC_HE_V1}, {@link AudioFormat#ENCODING_AAC_HE_V2},
+     *        {@link AudioFormat#ENCODING_AAC_ELD}, {@link AudioFormat#ENCODING_AAC_XHE} are
+     *        all enabled.
+     * @param enabled the required surround format state, true for enabled, false for disabled
+     * @return true if successful, otherwise false
+     */
+    public boolean setSurroundFormatEnabled(
+            @AudioFormat.SurroundSoundEncoding int audioFormat, boolean enabled) {
+        int status = AudioSystem.setSurroundFormatEnabled(audioFormat, enabled);
+        return status == AudioManager.SUCCESS;
+    }
+
+    /**
+     * @hide
+     * Returns all surround formats that are reported by the connected HDMI device.
+     * The keys are not affected by calling setSurroundFormatEnabled(), and the values
+     * are not affected by calling setSurroundFormatEnabled() when in AUTO mode.
+     * This information can used to show the AUTO setting for SurroundSound.
+     *
+     * @return a map where the key is a surround format and
+     * the value indicates the surround format is enabled or not
+     */
+    public Map<Integer, Boolean> getReportedSurroundFormats() {
+        Map<Integer, Boolean> reportedSurroundFormats = new HashMap<>();
+        int status = AudioSystem.getSurroundFormats(reportedSurroundFormats, true);
+        if (status != AudioManager.SUCCESS) {
+            // fail and bail!
+            Log.e(TAG, "getReportedSurroundFormats failed:" + status);
+            return new HashMap<Integer, Boolean>(); // Always return a map.
+        }
+        return reportedSurroundFormats;
+    }
+
 
     //---------------------------------------------------------
     // Inner classes

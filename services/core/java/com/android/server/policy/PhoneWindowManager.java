@@ -235,7 +235,6 @@ import android.util.SparseArray;
 import android.util.proto.ProtoOutputStream;
 import android.view.Display;
 import android.view.DisplayCutout;
-import android.view.DisplayInfo;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.IApplicationToken;
@@ -268,6 +267,7 @@ import com.android.internal.accessibility.AccessibilityShortcutController;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.logging.MetricsLogger;
+import com.android.internal.logging.nano.MetricsProto;
 import com.android.internal.policy.IKeyguardDismissCallback;
 import com.android.internal.policy.IShortcutService;
 import com.android.internal.policy.KeyguardDismissCallback;
@@ -461,11 +461,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
      */
     private final Object mLock = new Object();
 
+    private static final boolean SCROLL_BOOST_SS_ENABLE =
+                    SystemProperties.getBoolean("vendor.perf.gestureflingboost.enable", false);
+
     /*
      * @hide
      */
-    BoostFramework mPerfBoost = null;
-
+    BoostFramework mPerfBoostDrag = null;
+    BoostFramework mPerfBoostFling = null;
+    BoostFramework mPerfBoostPrefling = null;
     Context mContext;
     IWindowManager mWindowManager;
     WindowManagerFuncs mWindowManagerFuncs;
@@ -490,6 +494,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private ScreenshotHelper mScreenshotHelper;
     private boolean mHasFeatureWatch;
     private boolean mHasFeatureLeanback;
+    private boolean mIsPerfBoostFlingAcquired;
 
     // Assigned on main thread, accessed on UI thread
     volatile VrManagerInternal mVrManagerInternal;
@@ -568,7 +573,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     volatile boolean mGoingToSleep;
     volatile boolean mRequestedOrGoingToSleep;
     volatile boolean mRecentsVisible;
-    volatile boolean mNavBarVirtualKeyHapticFeedbackEnabled;
+    volatile boolean mNavBarVirtualKeyHapticFeedbackEnabled = true;
     volatile boolean mPictureInPictureVisible;
     // Written by vr manager thread, only read in this class.
     volatile private boolean mPersistentVrModeEnabled;
@@ -640,6 +645,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mUseTvRouting;
     int mVeryLongPressTimeout;
     boolean mAllowStartActivityForLongPressOnPowerDuringSetup;
+    MetricsLogger mLogger;
 
     private boolean mHandleVolumeKeysInWM;
 
@@ -834,6 +840,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     private final MutableBoolean mTmpBoolean = new MutableBoolean(false);
 
+    private boolean mAodShowing;
+
     private static final int MSG_ENABLE_POINTER_LOCATION = 1;
     private static final int MSG_DISABLE_POINTER_LOCATION = 2;
     private static final int MSG_DISPATCH_MEDIA_KEY_WITH_WAKE_LOCK = 3;
@@ -950,7 +958,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     accessibilityShortcutActivated();
                     break;
                 case MSG_BUGREPORT_TV:
-                    takeBugreport();
+                    requestFullBugreport();
                     break;
                 case MSG_ACCESSIBILITY_TV:
                     if (mAccessibilityShortcutController.isAccessibilityShortcutAvailable(false)) {
@@ -1157,6 +1165,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
         getAudioManagerInternal();
         mAudioManagerInternal.silenceRingerModeInternal("volume_hush");
+        Settings.Secure.putInt(mContext.getContentResolver(), Settings.Secure.HUSH_GESTURE_USED, 1);
+        mLogger.action(MetricsProto.MetricsEvent.ACTION_HUSH_GESTURE, mRingerToggleChord);
     }
 
     IStatusBarService getStatusBarService() {
@@ -2024,6 +2034,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mHasFeatureLeanback = mContext.getPackageManager().hasSystemFeature(FEATURE_LEANBACK);
         mAccessibilityShortcutController =
                 new AccessibilityShortcutController(mContext, new Handler(), mCurrentUserId);
+        mLogger = new MetricsLogger();
         // Init display burn-in protection
         boolean burnInProtectionEnabled = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_enableBurnInProtection);
@@ -2226,26 +2237,52 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     }
                     @Override
                     public void onFling(int duration) {
+                        String currentPackage = mContext.getPackageName();
                         if (mPowerManagerInternal != null) {
                             mPowerManagerInternal.powerHint(
                                     PowerHint.INTERACTION, duration);
                         }
+                        if (SCROLL_BOOST_SS_ENABLE) {
+                            if (mPerfBoostFling == null) {
+                                mPerfBoostFling = new BoostFramework();
+                                mIsPerfBoostFlingAcquired = false;
+                            }
+                            if (mPerfBoostFling == null) {
+                                Slog.e(TAG, "Error: boost object null");
+                                return;
+                            }
+
+                            mPerfBoostFling.perfHint(BoostFramework.VENDOR_HINT_SCROLL_BOOST,
+                                currentPackage, duration + 160, BoostFramework.Scroll.VERTICAL);
+                            mIsPerfBoostFlingAcquired = true;
+                        }
                     }
                     @Override
                     public void onScroll(boolean started) {
-                        if (mPerfBoost == null) {
-                            mPerfBoost = new BoostFramework();
+                        String currentPackage = mContext.getPackageName();
+                        if (mPerfBoostDrag == null) {
+                            mPerfBoostDrag = new BoostFramework();
                         }
-
-                        if (mPerfBoost == null) {
+                        if (mPerfBoostDrag == null) {
                             Slog.e(TAG, "Error: boost object null");
                             return;
                         }
+                        if (SCROLL_BOOST_SS_ENABLE) {
+                            if (mPerfBoostPrefling == null) {
+                                mPerfBoostPrefling = new BoostFramework();
+                            }
+                            if (mPerfBoostPrefling == null) {
+                                Slog.e(TAG, "Error: boost object null");
+                                return;
+                            }
+                            mPerfBoostPrefling.perfHint(BoostFramework.VENDOR_HINT_SCROLL_BOOST,
+                                    currentPackage, -1, BoostFramework.Scroll.PREFILING);
+                        }
                         if (started) {
-                            mPerfBoost.perfHint(BoostFramework.VENDOR_HINT_DRAG_BOOST,
-                                                "", -1, 1);
+                            mPerfBoostDrag.perfHint(BoostFramework.VENDOR_HINT_DRAG_BOOST,
+                                            currentPackage, -1, 1);
                         } else {
-                            mPerfBoost.perfLockRelease();
+                            mPerfBoostDrag.perfLockRelease();
                         }
                     }
 
@@ -2256,6 +2293,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     @Override
                     public void onDown() {
                         mOrientationListener.onTouchStart();
+                        if(SCROLL_BOOST_SS_ENABLE && mPerfBoostFling!= null
+                                            && mIsPerfBoostFlingAcquired) {
+                            mPerfBoostFling.perfLockRelease();
+                            mIsPerfBoostFlingAcquired = false;
+                        }
                     }
                     @Override
                     public void onUpOrCancel() {
@@ -2330,6 +2372,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     @Override
                     public void onTrustedChanged() {
                         mWindowManagerFuncs.notifyKeyguardTrustedChanged();
+                    }
+
+                    @Override
+                    public void onShowingChanged() {
+                        mWindowManagerFuncs.onKeyguardShowingAndNotOccludedChanged();
                     }
                 });
         mScreenshotHelper = new ScreenshotHelper(mContext);
@@ -3093,8 +3140,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         boolean keyguardLocked = isKeyguardLocked();
         boolean hideDockDivider = attrs.type == TYPE_DOCK_DIVIDER
                 && !mWindowManagerInternal.isStackVisible(WINDOWING_MODE_SPLIT_SCREEN_PRIMARY);
+        // If AOD is showing, the IME should be hidden. However, sometimes the AOD is considered
+        // hidden because it's in the process of hiding, but it's still being shown on screen.
+        // In that case, we want to continue hiding the IME until the windows have completed
+        // drawing. This way, we know that the IME can be safely shown since the other windows are
+        // now shown.
+        final boolean hideIme =
+                win.isInputMethodWindow() && (mAodShowing || !mWindowManagerDrawComplete);
         return (keyguardLocked && !allowWhenLocked && win.getDisplayId() == DEFAULT_DISPLAY)
-                || hideDockDivider;
+                || hideDockDivider || hideIme;
     }
 
     /** {@inheritDoc} */
@@ -4148,13 +4202,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         return mAccessibilityTvScheduled;
     }
 
-    private void takeBugreport() {
+    private void requestFullBugreport() {
         if ("1".equals(SystemProperties.get("ro.debuggable"))
                 || Settings.Global.getInt(mContext.getContentResolver(),
                         Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1) {
             try {
                 ActivityManager.getService()
-                        .requestBugReport(ActivityManager.BUGREPORT_OPTION_INTERACTIVE);
+                        .requestBugReport(ActivityManager.BUGREPORT_OPTION_FULL);
             } catch (RemoteException e) {
                 Slog.e(TAG, "Error taking bugreport", e);
             }
@@ -5122,7 +5176,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         final int fl = PolicyControl.getWindowFlags(win, attrs);
         final int pfl = attrs.privateFlags;
         final int sim = attrs.softInputMode;
-        final int requestedSysUiFl = PolicyControl.getSystemUiVisibility(win, null);
+        final int requestedSysUiFl = PolicyControl.getSystemUiVisibility(null, attrs);
         final int sysUiFl = requestedSysUiFl | getImpliedSysUiFlagsForLayout(attrs);
 
         final Rect pf = mTmpParentFrame;
@@ -5796,11 +5850,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     mStatusBarController.updateVisibilityLw(false /*transientAllowed*/,
                             mLastSystemUiFlags, mLastSystemUiFlags);
                 }
-                if (statusBarExpanded && mNavigationBar != null) {
-                    if (mNavigationBarController.setBarShowingLw(true)) {
-                        changes |= FINISH_LAYOUT_REDO_LAYOUT;
-                    }
-                }
             } else if (mTopFullscreenOpaqueWindowState != null) {
                 topIsFullscreen = topAppHidesStatusBar;
                 // The subtle difference between the window for mTopFullscreenOpaqueWindowState
@@ -6196,7 +6245,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     sendSystemKeyToStatusBarAsync(event.getKeyCode());
 
                     TelecomManager telecomManager = getTelecommService();
-                    if (telecomManager != null) {
+                    if (telecomManager != null && !mHandleVolumeKeysInWM) {
+                        // When {@link #mHandleVolumeKeysInWM} is set, volume key events
+                        // should be dispatched to WM.
                         if (telecomManager.isRinging()) {
                             // If an incoming call is ringing, either VOLUME key means
                             // "silence ringer".  We handle these keys here, rather than
@@ -6690,6 +6741,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     void launchVoiceAssistWithWakeLock() {
+        sendCloseSystemWindows(SYSTEM_DIALOG_REASON_ASSIST);
+
         final Intent voiceIntent;
         if (!keyguardOn()) {
             voiceIntent = new Intent(RecognizerIntent.ACTION_WEB_SEARCH);
@@ -9036,5 +9089,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     @Override
     public void onLockTaskStateChangedLw(int lockTaskState) {
         mImmersiveModeConfirmation.onLockTaskModeChangedLw(lockTaskState);
+    }
+
+    @Override
+    public boolean setAodShowing(boolean aodShowing) {
+        if (mAodShowing != aodShowing) {
+            mAodShowing = aodShowing;
+            return true;
+        }
+        return false;
     }
 }

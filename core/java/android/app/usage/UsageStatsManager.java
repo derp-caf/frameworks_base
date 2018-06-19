@@ -184,7 +184,11 @@ public final class UsageStatsManager {
     /** @hide */
     public static final int REASON_SUB_USAGE_SLICE_PINNED_PRIV  = 0x000A;
     /** @hide */
-    public static final int REASON_SUB_USAGE_EXEMPTED_SYNC_START = 0x000B;
+    public static final int REASON_SUB_USAGE_EXEMPTED_SYNC_SCHEDULED_NON_DOZE = 0x000B;
+    /** @hide */
+    public static final int REASON_SUB_USAGE_EXEMPTED_SYNC_SCHEDULED_DOZE = 0x000C;
+    /** @hide */
+    public static final int REASON_SUB_USAGE_EXEMPTED_SYNC_START = 0x000D;
 
     /** @hide */
     public static final int REASON_SUB_PREDICTED_RESTORED       = 0x0001;
@@ -513,7 +517,7 @@ public final class UsageStatsManager {
         try {
             mService.setAppStandbyBucket(packageName, bucket, mContext.getUserId());
         } catch (RemoteException e) {
-            // Nothing to do
+            throw e.rethrowFromSystemServer();
         }
     }
 
@@ -539,8 +543,8 @@ public final class UsageStatsManager {
             }
             return bucketMap;
         } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
-        return Collections.EMPTY_MAP;
     }
 
     /**
@@ -563,6 +567,7 @@ public final class UsageStatsManager {
         try {
             mService.setAppStandbyBuckets(slice, mContext.getUserId());
         } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
     }
 
@@ -572,13 +577,14 @@ public final class UsageStatsManager {
      * the sum of usages of apps in the packages array exceeds the {@code timeLimit} specified. The
      * observer will automatically be unregistered when the time limit is reached and the intent
      * is delivered. Registering an {@code observerId} that was already registered will override
-     * the previous one.
+     * the previous one. No more than 1000 unique {@code observerId} may be registered by a single
+     * uid at any one time.
      * @param observerId A unique id associated with the group of apps to be monitored. There can
      *                  be multiple groups with common packages and different time limits.
      * @param packages The list of packages to observe for foreground activity time. Cannot be null
      *                 and must include at least one package.
      * @param timeLimit The total time the set of apps can be in the foreground before the
-     *                  callbackIntent is delivered. Must be greater than 0.
+     *                  callbackIntent is delivered. Must be at least one minute.
      * @param timeUnit The unit for time specified in {@code timeLimit}. Cannot be null.
      * @param callbackIntent The PendingIntent that will be dispatched when the time limit is
      *                       exceeded by the group of apps. The delivered Intent will also contain
@@ -595,6 +601,7 @@ public final class UsageStatsManager {
             mService.registerAppUsageObserver(observerId, packages, timeUnit.toMillis(timeLimit),
                     callbackIntent, mContext.getOpPackageName());
         } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
     }
 
@@ -613,6 +620,7 @@ public final class UsageStatsManager {
         try {
             mService.unregisterAppUsageObserver(observerId, mContext.getOpPackageName());
         } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
     }
 
@@ -665,13 +673,19 @@ public final class UsageStatsManager {
                         sb.append("-sa");
                         break;
                     case REASON_SUB_USAGE_SLICE_PINNED:
-                        sb.append("slp");
+                        sb.append("-lp");
                         break;
                     case REASON_SUB_USAGE_SLICE_PINNED_PRIV:
-                        sb.append("slpp");
+                        sb.append("-lv");
+                        break;
+                    case REASON_SUB_USAGE_EXEMPTED_SYNC_SCHEDULED_NON_DOZE:
+                        sb.append("-en");
+                        break;
+                    case REASON_SUB_USAGE_EXEMPTED_SYNC_SCHEDULED_DOZE:
+                        sb.append("-ed");
                         break;
                     case REASON_SUB_USAGE_EXEMPTED_SYNC_START:
-                        sb.append("es");
+                        sb.append("-es");
                         break;
                 }
                 break;
@@ -697,6 +711,7 @@ public final class UsageStatsManager {
         try {
             mService.whitelistAppTemporarily(packageName, duration, user.getIdentifier());
         } catch (RemoteException re) {
+            throw re.rethrowFromSystemServer();
         }
     }
 
@@ -708,6 +723,7 @@ public final class UsageStatsManager {
         try {
             mService.onCarrierPrivilegedAppsChanged();
         } catch (RemoteException re) {
+            throw re.rethrowFromSystemServer();
         }
     }
 

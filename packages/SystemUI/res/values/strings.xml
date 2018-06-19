@@ -623,6 +623,8 @@
 
     <!-- The overflow indicator shown when a group has more notification inside the group than the visible ones. An example is "+ 3" [CHAR LIMIT=5] -->
     <string name="notification_group_overflow_indicator">+ <xliff:g id="number" example="3">%s</xliff:g></string>
+    <!-- The overflow indicator shown when a group has more notification inside the group than the visible ones. An example is "New message, +3" [CHAR LIMIT=7] -->
+    <string name="notification_group_overflow_indicator_ambient"><xliff:g id="notification_title" example="New message">%s</xliff:g>, +<xliff:g id="overflow" example="+3">%s</xliff:g></string>
 
     <!-- Content description describing how many more notifications are in a group [CHAR LIMIT=NONE] -->
     <plurals name="notification_group_overflow_description">
@@ -1067,7 +1069,7 @@
     <string name="manage_notifications_text">Manage notifications</string>
 
     <!-- The text to show in the notifications shade when dnd is suppressing notifications. [CHAR LIMIT=100] -->
-    <string name="dnd_suppressing_shade_text">Do Not Disturb is hiding notifications</string>
+    <string name="dnd_suppressing_shade_text">Notifications paused by Do Not Disturb</string>
 
     <!-- Media projection permission dialog action text. [CHAR LIMIT=60] -->
     <string name="media_projection_action_text">Start now</string>

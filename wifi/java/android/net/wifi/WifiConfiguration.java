@@ -123,10 +123,44 @@ public class WifiConfiguration implements Parcelable {
          */
         public static final int FT_EAP = 7;
 
+        /**
+        * IEEE 802.11ai FILS SK with SHA256
+         * @hide
+        */
+        public static final int FILS_SHA256 = 8;
+        /**
+         * IEEE 802.11ai FILS SK with SHA384:
+         * @hide
+         */
+        public static final int FILS_SHA384 = 9;
+        /**
+         * Device Provisioning Protocol
+         * @hide
+         */
+        public static final int DPP = 10;
+
+        /**
+         * Simultaneous Authentication of Equals
+         * @hide
+         */
+        public static final int SAE = 11;
+        /**
+         * Opportunististic Wireless Encryption
+         * @hide
+         */
+        public static final int OWE = 12;
+
+        /**
+         * SUITE_B_192 192 bit level
+         * @hide
+         */
+        public static final int SUITE_B_192 = 13;
+
         public static final String varName = "key_mgmt";
 
         public static final String[] strings = { "NONE", "WPA_PSK", "WPA_EAP",
-                "IEEE8021X", "WPA2_PSK", "OSEN", "FT_PSK", "FT_EAP" };
+                "IEEE8021X", "WPA2_PSK", "OSEN", "FT_PSK", "FT_EAP", "FILS_SHA256",
+                "FILS_SHA384", "DPP", "SAE", "OWE", "SUITE_B_192"};
     }
 
     /**
@@ -188,10 +222,15 @@ public class WifiConfiguration implements Parcelable {
         public static final int TKIP = 1;
         /** AES in Counter mode with CBC-MAC [RFC 3610, IEEE 802.11i/D7.0] */
         public static final int CCMP = 2;
+        /**
+         * AES in Galois/Counter Mode
+         * @hide
+         */
+        public static final int GCMP = 3;
 
         public static final String varName = "pairwise";
 
-        public static final String[] strings = { "NONE", "TKIP", "CCMP" };
+        public static final String[] strings = { "NONE", "TKIP", "CCMP", "GCMP" };
     }
 
     /**
@@ -201,6 +240,7 @@ public class WifiConfiguration implements Parcelable {
      * TKIP = Temporal Key Integrity Protocol [IEEE 802.11i/D7.0]
      * WEP104 = WEP (Wired Equivalent Privacy) with 104-bit key
      * WEP40 = WEP (Wired Equivalent Privacy) with 40-bit key (original 802.11)
+     * GCMP = AES in Galois/Counter Mode
      * </pre>
      */
     public static class GroupCipher {
@@ -224,12 +264,62 @@ public class WifiConfiguration implements Parcelable {
          * @hide
          */
         public static final int GTK_NOT_USED = 4;
+        /**
+         * AES in Galois/Counter Mode
+         * @hide
+         */
+        public static final int GCMP = 5;
 
         public static final String varName = "group";
 
         public static final String[] strings =
                 { /* deprecated */ "WEP40", /* deprecated */ "WEP104",
-                        "TKIP", "CCMP", "GTK_NOT_USED" };
+                        "TKIP", "CCMP", "GTK_NOT_USED", "GCMP" };
+    }
+
+    /**
+     * Recognized group management ciphers.
+     * <pre>
+     * CMAC = Cipher-based Message Authentication Code
+     * GMAC = Galois Message Authentication Code
+     * </pre>
+     * @hide
+     */
+    public static class GroupMgmtCipher {
+        private GroupMgmtCipher() { }
+
+        /** CMAC = Cipher-based Message Authentication Code */
+        public static final int CMAC = 0;
+
+        /** GMAC = Galois Message Authentication Code */
+        public static final int GMAC = 1;
+
+        public static final String varName = "groupMgmt";
+
+        public static final String[] strings =
+                { "CMAC", "GMAC" };
+    }
+    /**
+     * Recognized suiteB ciphers.
+     * <pre>
+     * ECDHE_ECDSA
+     * ECDHE_RSA
+     * </pre>
+     * @hide
+     */
+    public static class SuiteBCipher {
+        private SuiteBCipher() { }
+
+        /** ECDHE_ECDSA */
+        public static final int ECDHE_ECDSA = 0;
+
+        /** ECDHE_RSA */
+        public static final int ECDHE_RSA = 1;
+
+        public static final String varName = "SuiteB";
+
+        public static final String[] strings =
+                { "ECDHE_ECDSA", "ECDHE_RSA" };
     }
 
     /** Possible status of a network configuration. */
@@ -291,6 +381,12 @@ public class WifiConfiguration implements Parcelable {
      * @hide
      */
     public static final int AP_BAND_5GHZ = 1;
+
+    /**
+     * 2GHz + 5GHz Dual band.
+     * @hide
+     */
+    public static final int AP_BAND_DUAL = 2;
 
     /**
      * Device is allowed to choose the optimal band (2Ghz or 5Ghz) based on device capability,
@@ -403,6 +499,20 @@ public class WifiConfiguration implements Parcelable {
      * Defaults to CCMP TKIP WEP104 WEP40.
      */
     public BitSet allowedGroupCiphers;
+    /**
+     * The set of group management ciphers supported by this configuration.
+     * See {@link GroupMgmtCipher} for descriptions of the values.
+     * @hide
+     */
+    public BitSet allowedGroupMgmtCiphers;
+    /**
+     * The set of SuiteB ciphers supported by this configuration.
+     * See {@link SuiteBCipher} for descriptions of the values.
+     * @hide
+     */
+    public BitSet allowedSuiteBCiphers;
+     /** {@hide} */
+    public static final String erpVarName = "erp";
     /**
      * The enterprise configuration details specifying the EAP method,
      * certificates and other settings associated with the EAP.
@@ -828,6 +938,29 @@ public class WifiConfiguration implements Parcelable {
         }
         mRandomizedMacAddress = mac;
     }
+     /**
+     * @hide
+     * DPP Connector (signedConnector as string).
+     */
+    public String dppConnector;
+
+    /**
+     * @hide
+     * DPP net Access Key (own private key).
+     */
+    public String dppNetAccessKey;
+
+    /**
+     * @hide
+     * DPP net Access Key expiry in UNIX time stamp. 0 indicates no expiration.
+     */
+    public int dppNetAccessKeyExpiry;
+
+    /**
+     * @hide
+     * DPP C-Sign key (Configurator public key).
+     */
+    public String dppCsign;
 
     /** @hide
      * Boost given to RSSI on a home network for the purpose of calculating the score
@@ -903,38 +1036,43 @@ public class WifiConfiguration implements Parcelable {
          */
         public static final int DISABLED_DNS_FAILURE = 5;
         /**
+         * This network is temporarily disabled because it has no Internet access.
+         */
+        public static final int DISABLED_NO_INTERNET_TEMPORARY = 6;
+        /**
          * This network is disabled because we started WPS
          */
-        public static final int DISABLED_WPS_START = 6;
+        public static final int DISABLED_WPS_START = 7;
         /**
          * This network is disabled because EAP-TLS failure
          */
-        public static final int DISABLED_TLS_VERSION_MISMATCH = 7;
+        public static final int DISABLED_TLS_VERSION_MISMATCH = 8;
         // Values above are for temporary disablement; values below are for permanent disablement.
         /**
          * This network is disabled due to absence of user credentials
          */
-        public static final int DISABLED_AUTHENTICATION_NO_CREDENTIALS = 8;
+        public static final int DISABLED_AUTHENTICATION_NO_CREDENTIALS = 9;
         /**
-         * This network is disabled because no Internet connected and user do not want
+         * This network is permanently disabled because it has no Internet access and user does not
+         * want to stay connected.
          */
-        public static final int DISABLED_NO_INTERNET = 9;
+        public static final int DISABLED_NO_INTERNET_PERMANENT = 10;
         /**
          * This network is disabled due to WifiManager disable it explicitly
          */
-        public static final int DISABLED_BY_WIFI_MANAGER = 10;
+        public static final int DISABLED_BY_WIFI_MANAGER = 11;
         /**
          * This network is disabled due to user switching
          */
-        public static final int DISABLED_DUE_TO_USER_SWITCH = 11;
+        public static final int DISABLED_DUE_TO_USER_SWITCH = 12;
         /**
          * This network is disabled due to wrong password
          */
-        public static final int DISABLED_BY_WRONG_PASSWORD = 12;
+        public static final int DISABLED_BY_WRONG_PASSWORD = 13;
         /**
          * This Maximum disable reason value
          */
-        public static final int NETWORK_SELECTION_DISABLED_MAX = 13;
+        public static final int NETWORK_SELECTION_DISABLED_MAX = 14;
 
         /**
          * Quality network selection disable reason String (for debug purpose)
@@ -946,10 +1084,11 @@ public class WifiConfiguration implements Parcelable {
                 "NETWORK_SELECTION_DISABLED_AUTHENTICATION_FAILURE",
                 "NETWORK_SELECTION_DISABLED_DHCP_FAILURE",
                 "NETWORK_SELECTION_DISABLED_DNS_FAILURE",
+                "NETWORK_SELECTION_DISABLED_NO_INTERNET_TEMPORARY",
                 "NETWORK_SELECTION_DISABLED_WPS_START",
                 "NETWORK_SELECTION_DISABLED_TLS_VERSION",
                 "NETWORK_SELECTION_DISABLED_AUTHENTICATION_NO_CREDENTIALS",
-                "NETWORK_SELECTION_DISABLED_NO_INTERNET",
+                "NETWORK_SELECTION_DISABLED_NO_INTERNET_PERMANENT",
                 "NETWORK_SELECTION_DISABLED_BY_WIFI_MANAGER",
                 "NETWORK_SELECTION_DISABLED_BY_USER_SWITCH",
                 "NETWORK_SELECTION_DISABLED_BY_WRONG_PASSWORD"
@@ -1501,6 +1640,8 @@ public class WifiConfiguration implements Parcelable {
         allowedAuthAlgorithms = new BitSet();
         allowedPairwiseCiphers = new BitSet();
         allowedGroupCiphers = new BitSet();
+        allowedGroupMgmtCiphers = new BitSet();
+        allowedSuiteBCiphers = new BitSet();
         wepKeys = new String[4];
         for (int i = 0; i < wepKeys.length; i++) {
             wepKeys[i] = null;
@@ -1519,6 +1660,10 @@ public class WifiConfiguration implements Parcelable {
         shared = true;
         dtimInterval = 0;
         mRandomizedMacAddress = MacAddress.fromString(WifiInfo.DEFAULT_MAC_ADDRESS);
+        dppConnector = null;
+        dppNetAccessKey = null;
+        dppNetAccessKeyExpiry = -1;
+        dppCsign = null;
     }
 
     /**
@@ -1682,12 +1827,47 @@ public class WifiConfiguration implements Parcelable {
                 }
             }
         }
+        sbuf.append('\n');
+        sbuf.append(" GroupMgmtCiphers:");
+        for (int gmc = 0; gmc < this.allowedGroupMgmtCiphers.size(); gmc++) {
+            if (this.allowedGroupMgmtCiphers.get(gmc)) {
+                sbuf.append(" ");
+                if (gmc < GroupMgmtCipher.strings.length) {
+                    sbuf.append(GroupMgmtCipher.strings[gmc]);
+                } else {
+                    sbuf.append("??");
+                }
+            }
+        }
+        sbuf.append('\n');
+        sbuf.append(" SuiteBCiphers:");
+        for (int sbc = 0; sbc < this.allowedSuiteBCiphers.size(); sbc++) {
+            if (this.allowedSuiteBCiphers.get(sbc)) {
+                sbuf.append(" ");
+                if (sbc < SuiteBCipher.strings.length) {
+                    sbuf.append(SuiteBCipher.strings[sbc]);
+                } else {
+                    sbuf.append("??");
+                }
+            }
+        }
         sbuf.append('\n').append(" PSK: ");
         if (this.preSharedKey != null) {
             sbuf.append('*');
         }
         sbuf.append("\nEnterprise config:\n");
         sbuf.append(enterpriseConfig);
+
+        sbuf.append("\nDPP config:\n");
+        if (this.dppConnector != null) {
+            sbuf.append(" Dpp Connector: *\n");
+        }
+        if (this.dppNetAccessKey != null) {
+            sbuf.append(" Dpp NetAccessKey: *\n");
+        }
+        if (this.dppCsign != null) {
+            sbuf.append(" Dpp Csign: *\n");
+        }
 
         sbuf.append("IP config:\n");
         sbuf.append(mIpConfiguration.toString());
@@ -1846,6 +2026,14 @@ public class WifiConfiguration implements Parcelable {
             return KeyMgmt.WPA_EAP;
         } else if (allowedKeyManagement.get(KeyMgmt.IEEE8021X)) {
             return KeyMgmt.IEEE8021X;
+        } else if (allowedKeyManagement.get(KeyMgmt.DPP)) {
+            return KeyMgmt.DPP;
+        } else if (allowedKeyManagement.get(KeyMgmt.SAE)) {
+            return KeyMgmt.SAE;
+        } else if (allowedKeyManagement.get(KeyMgmt.OWE)) {
+            return KeyMgmt.OWE;
+        } else if (allowedKeyManagement.get(KeyMgmt.SUITE_B_192)) {
+            return KeyMgmt.SUITE_B_192;
         }
         return KeyMgmt.NONE;
     }
@@ -1877,6 +2065,14 @@ public class WifiConfiguration implements Parcelable {
                 key = SSID + KeyMgmt.strings[KeyMgmt.WPA_EAP];
             } else if (wepKeys[0] != null) {
                 key = SSID + "WEP";
+            } else if (allowedKeyManagement.get(KeyMgmt.DPP)) {
+                key = SSID + KeyMgmt.strings[KeyMgmt.DPP];
+            } else if (allowedKeyManagement.get(KeyMgmt.OWE)) {
+                key = SSID + KeyMgmt.strings[KeyMgmt.OWE];
+            } else if (allowedKeyManagement.get(KeyMgmt.SAE)) {
+                key = SSID + KeyMgmt.strings[KeyMgmt.SAE];
+            } else if (allowedKeyManagement.get(KeyMgmt.SUITE_B_192)) {
+                key = SSID + KeyMgmt.strings[KeyMgmt.SUITE_B_192];
             } else {
                 key = SSID + KeyMgmt.strings[KeyMgmt.NONE];
             }
@@ -2035,6 +2231,8 @@ public class WifiConfiguration implements Parcelable {
             allowedAuthAlgorithms  = (BitSet) source.allowedAuthAlgorithms.clone();
             allowedPairwiseCiphers = (BitSet) source.allowedPairwiseCiphers.clone();
             allowedGroupCiphers    = (BitSet) source.allowedGroupCiphers.clone();
+            allowedGroupMgmtCiphers    = (BitSet) source.allowedGroupMgmtCiphers.clone();
+            allowedSuiteBCiphers    = (BitSet) source.allowedSuiteBCiphers.clone();
             enterpriseConfig = new WifiEnterpriseConfig(source.enterpriseConfig);
 
             defaultGwMacAddress = source.defaultGwMacAddress;
@@ -2076,6 +2274,12 @@ public class WifiConfiguration implements Parcelable {
             shared = source.shared;
             recentFailure.setAssociationStatus(source.recentFailure.getAssociationStatus());
             mRandomizedMacAddress = source.mRandomizedMacAddress;
+            dppConnector = source.dppConnector;
+            dppNetAccessKey = source.dppNetAccessKey;
+            dppNetAccessKeyExpiry = source.dppNetAccessKeyExpiry;
+            dppCsign = source.dppCsign;
+
+            requirePMF = source.requirePMF;
         }
     }
 
@@ -2111,6 +2315,8 @@ public class WifiConfiguration implements Parcelable {
         writeBitSet(dest, allowedAuthAlgorithms);
         writeBitSet(dest, allowedPairwiseCiphers);
         writeBitSet(dest, allowedGroupCiphers);
+        writeBitSet(dest, allowedGroupMgmtCiphers);
+        writeBitSet(dest, allowedSuiteBCiphers);
 
         dest.writeParcelable(enterpriseConfig, flags);
 
@@ -2140,6 +2346,10 @@ public class WifiConfiguration implements Parcelable {
         dest.writeString(mPasspointManagementObjectTree);
         dest.writeInt(recentFailure.getAssociationStatus());
         dest.writeParcelable(mRandomizedMacAddress, flags);
+        dest.writeString(dppConnector);
+        dest.writeString(dppNetAccessKey);
+        dest.writeInt(dppNetAccessKeyExpiry);
+        dest.writeString(dppCsign);
     }
 
     /** Implement the Parcelable interface {@hide} */
@@ -2177,6 +2387,8 @@ public class WifiConfiguration implements Parcelable {
                 config.allowedAuthAlgorithms  = readBitSet(in);
                 config.allowedPairwiseCiphers = readBitSet(in);
                 config.allowedGroupCiphers    = readBitSet(in);
+                config.allowedGroupMgmtCiphers    = readBitSet(in);
+                config.allowedSuiteBCiphers    = readBitSet(in);
 
                 config.enterpriseConfig = in.readParcelable(null);
                 config.setIpConfiguration(in.readParcelable(null));
@@ -2205,6 +2417,10 @@ public class WifiConfiguration implements Parcelable {
                 config.mPasspointManagementObjectTree = in.readString();
                 config.recentFailure.setAssociationStatus(in.readInt());
                 config.mRandomizedMacAddress = in.readParcelable(null);
+                config.dppConnector = in.readString();
+                config.dppNetAccessKey = in.readString();
+                config.dppNetAccessKeyExpiry = in.readInt();
+                config.dppCsign = in.readString();
                 return config;
             }
 

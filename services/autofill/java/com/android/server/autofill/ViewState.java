@@ -18,8 +18,8 @@ package com.android.server.autofill;
 
 import static android.service.autofill.FillRequest.FLAG_MANUAL_REQUEST;
 import static com.android.server.autofill.Helper.sDebug;
-import static com.android.server.autofill.Helper.sVerbose;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.graphics.Rect;
 import android.service.autofill.FillResponse;
@@ -41,7 +41,7 @@ final class ViewState {
         /**
          * Called when the fill UI is ready to be shown for this view.
          */
-        void onFillReady(FillResponse fillResponse, AutofillId focusedId,
+        void onFillReady(@NonNull FillResponse fillResponse, @NonNull AutofillId focusedId,
                 @Nullable AutofillValue value);
     }
 

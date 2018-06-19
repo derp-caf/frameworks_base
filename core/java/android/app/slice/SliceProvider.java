@@ -15,6 +15,8 @@
  */
 package android.app.slice;
 
+import static android.app.slice.Slice.SUBTYPE_COLOR;
+
 import android.annotation.NonNull;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -29,6 +31,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ProviderInfo;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -39,6 +42,8 @@ import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
 import android.util.ArraySet;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.ContextThemeWrapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,6 +135,10 @@ public abstract class SliceProvider extends ContentProvider {
     /**
      * @hide
      */
+    public static final String METHOD_GET_PERMISSIONS = "get_permissions";
+    /**
+     * @hide
+     */
     public static final String EXTRA_INTENT = "slice_intent";
     /**
      * @hide
@@ -147,6 +156,10 @@ public abstract class SliceProvider extends ContentProvider {
      * @hide
      */
     public static final String EXTRA_PROVIDER_PKG = "provider_pkg";
+    /**
+     * @hide
+     */
+    public static final String EXTRA_RESULT = "result";
 
     private static final boolean DEBUG = false;
 
@@ -392,18 +405,20 @@ public abstract class SliceProvider extends ContentProvider {
             b.putParcelableArrayList(EXTRA_SLICE_DESCENDANTS,
                     new ArrayList<>(handleGetDescendants(uri)));
             return b;
+        } else if (method.equals(METHOD_GET_PERMISSIONS)) {
+            if (Binder.getCallingUid() != Process.SYSTEM_UID) {
+                throw new SecurityException("Only the system can get permissions");
+            }
+            Bundle b = new Bundle();
+            b.putStringArray(EXTRA_RESULT, mAutoGrantPermissions);
+            return b;
         }
         return super.call(method, arg, extras);
     }
 
     private Collection<Uri> handleGetDescendants(Uri uri) {
         mCallback = "onGetSliceDescendants";
-        Handler.getMain().postDelayed(mAnr, SLICE_BIND_ANR);
-        try {
-            return onGetSliceDescendants(uri);
-        } finally {
-            Handler.getMain().removeCallbacks(mAnr);
-        }
+        return onGetSliceDescendants(uri);
     }
 
     private void handlePinSlice(Uri sliceUri) {
@@ -462,11 +477,24 @@ public abstract class SliceProvider extends ContentProvider {
         }
         Slice.Builder parent = new Slice.Builder(sliceUri);
         Slice.Builder childAction = new Slice.Builder(parent)
+                .addIcon(Icon.createWithResource(context,
+                        com.android.internal.R.drawable.ic_permission), null,
+                        Collections.emptyList())
                 .addHints(Arrays.asList(Slice.HINT_TITLE, Slice.HINT_SHORTCUT))
                 .addAction(action, new Slice.Builder(parent).build(), null);
 
+        TypedValue tv = new TypedValue();
+        new ContextThemeWrapper(context, android.R.style.Theme_DeviceDefault_Light)
+                .getTheme().resolveAttribute(android.R.attr.colorAccent, tv, true);
+        int deviceDefaultAccent = tv.data;
+
         parent.addSubSlice(new Slice.Builder(sliceUri.buildUpon().appendPath("permission").build())
+                .addIcon(Icon.createWithResource(context,
+                        com.android.internal.R.drawable.ic_arrow_forward), null,
+                        Collections.emptyList())
                 .addText(getPermissionString(context, callingPackage), null,
+                        Collections.emptyList())
+                .addInt(deviceDefaultAccent, SUBTYPE_COLOR,
                         Collections.emptyList())
                 .addSubSlice(childAction.build(), null)
                 .build(), null);

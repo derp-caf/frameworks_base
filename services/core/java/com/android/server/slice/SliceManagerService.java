@@ -36,6 +36,7 @@ import android.app.usage.UsageStatsManagerInternal;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -49,9 +50,12 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
+import android.os.ResultReceiver;
+import android.os.ShellCallback;
 import android.os.UserHandle;
 import android.util.ArrayMap;
 import android.util.Slog;
+import android.util.SparseArray;
 import android.util.Xml.Encoding;
 
 import com.android.internal.annotations.GuardedBy;
@@ -69,10 +73,12 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class SliceManagerService extends ISliceManager.Stub {
 
@@ -86,6 +92,10 @@ public class SliceManagerService extends ISliceManager.Stub {
 
     @GuardedBy("mLock")
     private final ArrayMap<Uri, PinnedSliceState> mPinnedSlicesByUri = new ArrayMap<>();
+    @GuardedBy("mLock")
+    private final SparseArray<PackageMatchingCache> mAssistantLookup = new SparseArray<>();
+    @GuardedBy("mLock")
+    private final SparseArray<PackageMatchingCache> mHomeLookup = new SparseArray<>();
     private final Handler mHandler;
 
     private final SlicePermissionManager mPermissions;
@@ -320,6 +330,12 @@ public class SliceManagerService extends ISliceManager.Stub {
         }
     }
 
+    @Override
+    public void onShellCommand(FileDescriptor in, FileDescriptor out, FileDescriptor err,
+            String[] args, ShellCallback callback, ResultReceiver resultReceiver) {
+        new SliceShellCommand(this).exec(this, in, out, err, args, callback, resultReceiver);
+    }
+
     ///  ----- internal code -----
     private void enforceOwner(String pkg, Uri uri, int user) {
         if (!Objects.equals(getProviderPkg(uri, user), pkg) || pkg == null) {
@@ -443,17 +459,37 @@ public class SliceManagerService extends ISliceManager.Stub {
     }
 
     private boolean isAssistant(String pkg, int userId) {
-        final ComponentName cn = mAssistUtils.getAssistComponentForUser(userId);
-        if (cn == null) {
-            return false;
-        }
-        return cn.getPackageName().equals(pkg);
+        return getAssistantMatcher(userId).matches(pkg);
     }
 
     private boolean isDefaultHomeApp(String pkg, int userId) {
-        String defaultHome = getDefaultHome(userId);
+        return getHomeMatcher(userId).matches(pkg);
+    }
 
-        return pkg != null && Objects.equals(pkg, defaultHome);
+    private PackageMatchingCache getAssistantMatcher(int userId) {
+        PackageMatchingCache matcher = mAssistantLookup.get(userId);
+        if (matcher == null) {
+            matcher = new PackageMatchingCache(() -> getAssistant(userId));
+            mAssistantLookup.put(userId, matcher);
+        }
+        return matcher;
+    }
+
+    private PackageMatchingCache getHomeMatcher(int userId) {
+        PackageMatchingCache matcher = mHomeLookup.get(userId);
+        if (matcher == null) {
+            matcher = new PackageMatchingCache(() -> getDefaultHome(userId));
+            mHomeLookup.put(userId, matcher);
+        }
+        return matcher;
+    }
+
+    private String getAssistant(int userId) {
+        final ComponentName cn = mAssistUtils.getAssistComponentForUser(userId);
+        if (cn == null) {
+            return null;
+        }
+        return cn.getPackageName();
     }
 
     // Based on getDefaultHome in ShortcutService.
@@ -540,6 +576,38 @@ public class SliceManagerService extends ISliceManager.Stub {
             }
         }
     };
+
+    public String[] getAllPackagesGranted(String authority) {
+        String pkg = getProviderPkg(new Uri.Builder()
+                .scheme(ContentResolver.SCHEME_CONTENT)
+                .authority(authority)
+                .build(), 0);
+        return mPermissions.getAllPackagesGranted(pkg);
+    }
+
+    /**
+     * Holder that caches a package that has access to a slice.
+     */
+    static class PackageMatchingCache {
+
+        private final Supplier<String> mPkgSource;
+        private String mCurrentPkg;
+
+        public PackageMatchingCache(Supplier<String> pkgSource) {
+            mPkgSource = pkgSource;
+        }
+
+        public boolean matches(String pkgCandidate) {
+            if (pkgCandidate == null) return false;
+
+            if (Objects.equals(pkgCandidate, mCurrentPkg)) {
+                return true;
+            }
+            // Failed on cached value, try updating.
+            mCurrentPkg = mPkgSource.get();
+            return Objects.equals(pkgCandidate, mCurrentPkg);
+        }
+    }
 
     public static class Lifecycle extends SystemService {
         private SliceManagerService mService;

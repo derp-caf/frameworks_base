@@ -37,14 +37,15 @@ import java.io.PrintWriter;
 /**
  * Decides when to enable / disable battery saver.
  *
- * (n.b. This isn't really implemented as a "state machine" though.)
+ * IMPORTANT: This class shares the power manager lock, which is very low in the lock hierarchy.
+ * Do not call out with the lock held. (Settings provider is okay.)
  *
  * Test:
   atest $ANDROID_BUILD_TOP/frameworks/base/services/tests/servicestests/src/com/android/server/power/batterysaver/BatterySaverStateMachineTest.java
  */
 public class BatterySaverStateMachine {
     private static final String TAG = "BatterySaverStateMachine";
-    private final Object mLock = new Object();
+    private final Object mLock;
 
     private static final boolean DEBUG = BatterySaverPolicy.DEBUG;
 
@@ -118,8 +119,9 @@ public class BatterySaverStateMachine {
         }
     };
 
-    public BatterySaverStateMachine(
+    public BatterySaverStateMachine(Object lock,
             Context context, BatterySaverController batterySaverController) {
+        mLock = lock;
         mContext = context;
         mBatterySaverController = batterySaverController;
     }
@@ -139,20 +141,26 @@ public class BatterySaverStateMachine {
         if (DEBUG) {
             Slog.d(TAG, "onBootCompleted");
         }
-        // This is called with the power manager lock held. Don't do any
-        runOnBgThread(() -> {
-            synchronized (mLock) {
+        // Just booted. We don't want LOW_POWER_MODE to be persisted, so just always clear it.
+        putGlobalSetting(Global.LOW_POWER_MODE, 0);
 
-                final ContentResolver cr = mContext.getContentResolver();
-                cr.registerContentObserver(Settings.Global.getUriFor(
-                        Settings.Global.LOW_POWER_MODE),
-                        false, mSettingsObserver, UserHandle.USER_SYSTEM);
-                cr.registerContentObserver(Settings.Global.getUriFor(
-                        Settings.Global.LOW_POWER_MODE_STICKY),
-                        false, mSettingsObserver, UserHandle.USER_SYSTEM);
-                cr.registerContentObserver(Settings.Global.getUriFor(
-                        Settings.Global.LOW_POWER_MODE_TRIGGER_LEVEL),
-                        false, mSettingsObserver, UserHandle.USER_SYSTEM);
+        // This is called with the power manager lock held. Don't do anything that may call to
+        // upper services. (e.g. don't call into AM directly)
+        // So use a BG thread.
+        runOnBgThread(() -> {
+
+            final ContentResolver cr = mContext.getContentResolver();
+            cr.registerContentObserver(Settings.Global.getUriFor(
+                    Settings.Global.LOW_POWER_MODE),
+                    false, mSettingsObserver, UserHandle.USER_SYSTEM);
+            cr.registerContentObserver(Settings.Global.getUriFor(
+                    Settings.Global.LOW_POWER_MODE_STICKY),
+                    false, mSettingsObserver, UserHandle.USER_SYSTEM);
+            cr.registerContentObserver(Settings.Global.getUriFor(
+                    Settings.Global.LOW_POWER_MODE_TRIGGER_LEVEL),
+                    false, mSettingsObserver, UserHandle.USER_SYSTEM);
+
+            synchronized (mLock) {
 
                 mBootCompleted = true;
 
@@ -183,8 +191,6 @@ public class BatterySaverStateMachine {
     }
 
     void refreshSettingsLocked() {
-        final ContentResolver cr = mContext.getContentResolver();
-
         final boolean lowPowerModeEnabled = getGlobalSetting(
                 Settings.Global.LOW_POWER_MODE, 0) != 0;
         final boolean lowPowerModeEnabledSticky = getGlobalSetting(

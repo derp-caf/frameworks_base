@@ -197,7 +197,7 @@
     <string name="keep_screen_on" msgid="1146389631208760344">"Aktiv lassen"</string>
     <string name="keep_screen_on_summary" msgid="2173114350754293009">"Display wird beim Laden nie in den Ruhezustand versetzt"</string>
     <string name="bt_hci_snoop_log" msgid="3340699311158865670">"Bluetooth HCI-Snoop-Protokoll aktivieren"</string>
-    <string name="bt_hci_snoop_log_summary" msgid="366083475849911315">"Alle Bluetooth HCI-Pakete in einer Datei erfassen (Wenn diese Einstellung geändert wurde, muss Bluetooth umgeschaltet werden)"</string>
+    <string name="bt_hci_snoop_log_summary" msgid="366083475849911315">"Alle Bluetooth HCI-Pakete in einer Datei erfassen. (Wenn diese Einstellung geändert wurde, muss Bluetooth aus- und wieder eingeschaltet werden.)"</string>
     <string name="oem_unlock_enable" msgid="6040763321967327691">"OEM-Entsperrung"</string>
     <string name="oem_unlock_enable_summary" msgid="4720281828891618376">"Bootloader-Entsperrung zulassen"</string>
     <string name="confirm_enable_oem_unlock_title" msgid="4802157344812385674">"OEM-Entsperrung zulassen?"</string>
@@ -224,7 +224,7 @@
     <string name="bluetooth_select_a2dp_codec_channel_mode" msgid="884855779449390540">"Modus des Bluetooth-Audiokanals"</string>
     <string name="bluetooth_select_a2dp_codec_channel_mode_dialog_title" msgid="7234956835280563341">"Bluetooth-Audio-Codec auslösen\nAuswahl: Kanalmodus"</string>
     <string name="bluetooth_select_a2dp_codec_ldac_playback_quality" msgid="3619694372407843405">"Bluetooth-Audio-LDAC-Codec: Wiedergabequalität"</string>
-    <string name="bluetooth_select_a2dp_codec_ldac_playback_quality_dialog_title" msgid="6893955536658137179">"Bluetooth-Audio-LDAC-Codec auslösen\nAuswahl: Wiedergabequalität"</string>
+    <string name="bluetooth_select_a2dp_codec_ldac_playback_quality_dialog_title" msgid="6893955536658137179">"Bluetooth-Audio-LDAC-Codec-\nAuswahl auslösen: Wiedergabequalität"</string>
     <string name="bluetooth_select_a2dp_codec_streaming_label" msgid="5347862512596240506">"Streaming: <xliff:g id="STREAMING_PARAMETER">%1$s</xliff:g>"</string>
     <string name="select_private_dns_configuration_title" msgid="3700456559305263922">"Privates DNS"</string>
     <string name="select_private_dns_configuration_dialog_title" msgid="9221994415765826811">"Privaten DNS-Modus auswählen"</string>

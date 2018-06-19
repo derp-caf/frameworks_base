@@ -57,6 +57,7 @@
 
     <dimen name="battery_height">14.5dp</dimen>
     <dimen name="battery_width">9.5dp</dimen>
+    <dimen name="battery_powersave_outline_thickness">1dp</dimen>
 
     <dimen name="bt_battery_padding">2dp</dimen>
 
@@ -87,7 +88,7 @@
     <dimen name="zen_mode_condition_detail_bottom_padding">4dp</dimen>
 
     <!-- SignalDrawable -->
-    <dimen name="signal_icon_size">17dp</dimen>
+    <dimen name="signal_icon_size">15dp</dimen>
     <!-- How far to inset the rounded edges -->
     <dimen name="stat_sys_mobile_signal_circle_inset">0.9dp</dimen>
 

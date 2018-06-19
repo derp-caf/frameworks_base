@@ -16,8 +16,10 @@
 
 package com.android.systemui.statusbar.phone;
 
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.view.View;
+import android.view.WindowInsets;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.systemui.Dependency;
@@ -36,7 +38,7 @@ import java.util.function.Consumer;
 /**
  * Controls the appearance of heads up notifications in the icon area and the header itself.
  */
-class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
+public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         DarkIconDispatcher.DarkReceiver {
     public static final int CONTENT_FADE_DURATION = 110;
     public static final int CONTENT_FADE_DELAY = 100;
@@ -59,6 +61,7 @@ class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
     private final View.OnLayoutChangeListener mStackScrollLayoutChangeListener =
             (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom)
                     -> updatePanelTranslation();
+    Point mPoint;
 
     public HeadsUpAppearanceController(
             NotificationIconAreaController notificationIconAreaController,
@@ -92,6 +95,7 @@ class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         panelView.setHeadsUpAppearanceController(this);
         mStackScroller.addOnExpandedHeightListener(mSetExpandedHeight);
         mStackScroller.addOnLayoutChangeListener(mStackScrollLayoutChangeListener);
+        mStackScroller.setHeadsUpAppearanceController(this);
         mClockView = clockView;
         mDarkIconDispatcher = Dependency.get(DarkIconDispatcher.class);
         mDarkIconDispatcher.addDarkReceiver(this);
@@ -120,9 +124,54 @@ class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         updateHeader(headsUp.getEntry());
     }
 
+    /** To count the distance from the window right boundary to scroller right boundary. The
+     * distance formula is the following:
+     *     Y = screenSize - (SystemWindow's width + Scroller.getRight())
+     * There are four modes MUST to be considered in Cut Out of RTL.
+     * No Cut Out:
+     *   Scroller + NB
+     *   NB + Scroller
+     *     => SystemWindow = NavigationBar's width
+     *     => Y = screenSize - (SystemWindow's width + Scroller.getRight())
+     * Corner Cut Out or Tall Cut Out:
+     *   cut out + Scroller + NB
+     *   NB + Scroller + cut out
+     *     => SystemWindow = NavigationBar's width
+     *     => Y = screenSize - (SystemWindow's width + Scroller.getRight())
+     * Double Cut Out:
+     *   cut out left + Scroller + (NB + cut out right)
+     *     SystemWindow = NavigationBar's width + cut out right width
+     *     => Y = screenSize - (SystemWindow's width + Scroller.getRight())
+     *   (cut out left + NB) + Scroller + cut out right
+     *     SystemWindow = NavigationBar's width + cut out left width
+     *     => Y = screenSize - (SystemWindow's width + Scroller.getRight())
+     * @return the translation X value for RTL. In theory, it should be negative. i.e. -Y
+     */
+    private int getRtlTranslation() {
+        if (mPoint == null) {
+            mPoint = new Point();
+        }
+
+        int realDisplaySize = 0;
+        if (mStackScroller.getDisplay() != null) {
+            mStackScroller.getDisplay().getRealSize(mPoint);
+            realDisplaySize = mPoint.x;
+        }
+
+        WindowInsets windowInset = mStackScroller.getRootWindowInsets();
+        return windowInset.getSystemWindowInsetLeft() + mStackScroller.getRight()
+                + windowInset.getSystemWindowInsetRight() - realDisplaySize;
+    }
+
     public void updatePanelTranslation() {
-        float newTranslation = mStackScroller.getLeft() + mStackScroller.getTranslationX();
-        mHeadsUpStatusBarView.setTranslationX(newTranslation);
+        float newTranslation;
+        if (mStackScroller.isLayoutRtl()) {
+            newTranslation = getRtlTranslation();
+        } else {
+            newTranslation = mStackScroller.getLeft();
+        }
+        newTranslation += mStackScroller.getTranslationX();
+        mHeadsUpStatusBarView.setPanelTranslation(newTranslation);
     }
 
     private void updateTopEntry() {
@@ -226,10 +275,10 @@ class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         });
     }
 
-    private void updateHeader(NotificationData.Entry entry) {
+    public void updateHeader(NotificationData.Entry entry) {
         ExpandableNotificationRow row = entry.row;
         float headerVisibleAmount = 1.0f;
-        if (row.isPinned() || row == mTrackedChild) {
+        if (row.isPinned() || row.isHeadsUpAnimatingAway() || row == mTrackedChild) {
             headerVisibleAmount = mExpandFraction;
         }
         row.setHeaderVisibleAmount(headerVisibleAmount);
