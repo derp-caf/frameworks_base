@@ -4961,6 +4961,12 @@ public final class Settings {
         public static final String OMNI_QS_TILE_TITLE_VISIBILITY = "qs_tile_title_visibility";
 
         /**
+         * Number of qs columns on quickbar
+         * @hide
+         */
+        public static final String QS_QUICKBAR_COLUMNS = "qs_quickbar_columns";
+
+        /**
 	 ** What to show in network traffic indicator in statusbar
 	 ** @hide
 	 **/
