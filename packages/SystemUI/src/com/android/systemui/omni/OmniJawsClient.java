@@ -233,7 +233,7 @@ public class OmniJawsClient {
     public Intent getSettingsIntent() {
         if (isOmniJawsServiceInstalled()) {
             Intent settings = new Intent(Intent.ACTION_MAIN)
-                    .setClassName("com.android.settings", "com.android.settings.Settings$OmniJawsSettingsActivity");
+                    .setClassName("com.derpcaf.derpzone", "com.derpcaf.derpzone$OmniJawsSettingsActivity");
             return settings;
         }
         return null;
