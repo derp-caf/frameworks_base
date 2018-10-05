@@ -5220,6 +5220,9 @@ public final class Settings {
          * @hide
          */
         public static final String NOTIFICATION_SOUND_VIB_SCREEN_ON = "notification_sound_vib_screen_on";
+        /** @hide */
+        private static final Validator NOTIFICATION_SOUND_VIB_SCREEN_ON_VALIDATOR =
+                BOOLEAN_VALIDATOR;
 
         /**
          * Whether to wake the screen with the home key, the value is boolean.
@@ -5343,7 +5346,8 @@ public final class Settings {
             STATUSBAR_CLOCK_DATE_STYLE,
             STATUSBAR_CLOCK_DATE_FORMAT,
             OMNI_USE_BOTTOM_GESTURE_NAVIGATION,
-            OMNI_LONG_PRESS_POWER_TORCH
+            OMNI_LONG_PRESS_POWER_TORCH,
+            NOTIFICATION_SOUND_VIB_SCREEN_ON,
         };
 
         /**
@@ -5492,6 +5496,11 @@ public final class Settings {
             PRIVATE_SETTINGS.add(OMNI_USE_BOTTOM_GESTURE_NAVIGATION);
             PRIVATE_SETTINGS.add(OMNI_LONG_PRESS_POWER_TORCH);
             PRIVATE_SETTINGS.add(POCKET_JUDGE);
+            PRIVATE_SETTINGS.add(NOTIFICATION_SOUND_VIB_SCREEN_ON);
+            PRIVATE_SETTINGS.add(SMART_PIXELS_ENABLE);
+            PRIVATE_SETTINGS.add(SMART_PIXELS_PATTERN);
+            PRIVATE_SETTINGS.add(SMART_PIXELS_SHIFT_TIMEOUT);
+            PRIVATE_SETTINGS.add(SMART_PIXELS_ON_POWER_SAVE);
         }
 
 
@@ -5611,6 +5620,7 @@ public final class Settings {
             VALIDATORS.put(MUTE_ANNOYING_NOTIFICATIONS_THRESHOLD, MUTE_ANNOYING_NOTIFICATIONS_THRESHOLD_VALIDATOR);
             VALIDATORS.put(OMNI_USE_BOTTOM_GESTURE_NAVIGATION, OMNI_USE_BOTTOM_GESTURE_NAVIGATION_VALIDATOR);
             VALIDATORS.put(OMNI_LONG_PRESS_POWER_TORCH, OMNI_LONG_PRESS_POWER_TORCH_VALIDATOR);
+            VALIDATORS.put(NOTIFICATION_SOUND_VIB_SCREEN_ON, NOTIFICATION_SOUND_VIB_SCREEN_ON_VALIDATOR);
         }
 
         /**
