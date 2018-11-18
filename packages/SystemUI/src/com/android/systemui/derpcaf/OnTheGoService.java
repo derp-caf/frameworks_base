@@ -353,7 +353,7 @@ public class OnTheGoService extends Service {
 
         if (type == 1 || type == 2) {
             final ComponentName cn = new ComponentName("com.android.systemui",
-                    "com.android.systemui.benzo.onthego.OnTheGoService");
+                    "com.android.systemui.derpcaf.onthego.OnTheGoService");
             final Intent startIntent = new Intent();
             startIntent.setComponent(cn);
             startIntent.setAction(ACTION_START);

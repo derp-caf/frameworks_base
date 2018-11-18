@@ -41,7 +41,7 @@ public class OnTheGoActions {
 
     private static void actionOnTheGoToggle(final Context context) {
         final ComponentName cn = new ComponentName("com.android.systemui",
-                "com.android.systemui.benzo.onthego.OnTheGoService");
+                "com.android.systemui.derpcaf.onthego.OnTheGoService");
         final Intent startIntent = new Intent();
         startIntent.setComponent(cn);
         startIntent.setAction("start");
