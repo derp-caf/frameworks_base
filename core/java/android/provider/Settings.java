@@ -4810,6 +4810,18 @@ public final class Settings {
         @Deprecated
         public static final String SIP_ASK_ME_EACH_TIME = "SIP_ASK_ME_EACH_TIME";
 
+         /**
+         * Hold current font name and name of the originating package Uses "|" as a delimiter
+         * @hide
+         */
+        public static final String FONT_INFO = "font_info";
+
+        /**
+         * Hold list of installed font provider packages. Uses "|" as a delimiter
+         * @hide
+         */
+        public static final String FONT_PACKAGES = "font_packages";
+
         /**
          * Pointer speed setting.
          * This is an integer value in a range between -7 and +7, so there are 15 possible values.

@@ -64,6 +64,11 @@
     <!-- Displayed when a carrier does not support call forwarding queries when roaming. -->
     <string name="mmiErrorWhileRoaming">Can not change call forwarding settings from your phone while you are roaming.</string>
 
+    <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_accessFontManager">access font manager</string>
+    <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_accessFontManager">Allows an application to access the font manager.</string>
+
     <!-- Displayed when a phone feature such as call barring was activated. -->
     <string name="serviceEnabled">Service was enabled.</string>
     <!-- Displayed in front of the list of a set of service classes

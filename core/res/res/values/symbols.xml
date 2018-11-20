@@ -65,6 +65,8 @@
   <java-symbol type="id" name="content_preview_text_area" />
   <java-symbol type="id" name="content_preview_text_layout" />
   <java-symbol type="id" name="content_preview_title" />
+  <!-- System fonts -->
+  <java-symbol type="array" name="config_fontPackages" />
   <java-symbol type="id" name="content_preview_title_layout" />
   <java-symbol type="id" name="chooser_action_row" />
   <java-symbol type="id" name="current_scene" />

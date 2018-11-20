@@ -88,6 +88,10 @@
         <item>@drawable/text_cursor_material</item>
     </array>
 
+    <!-- System font packages (overlay in vendor) -->
+    <string-array name="config_fontPackages" translatable="false">
+    </string-array>
+
     <!-- Do not translate. These are all of the color state list resources that should be
          preloaded by the zygote process before it starts forking application processes. -->
     <array name="preloaded_color_state_lists">

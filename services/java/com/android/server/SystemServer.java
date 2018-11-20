@@ -280,6 +280,8 @@ public final class SystemServer {
             "com.android.server.wallpaper.WallpaperManagerService$Lifecycle";
     private static final String AUTO_FILL_MANAGER_SERVICE_CLASS =
             "com.android.server.autofill.AutofillManagerService";
+    private static final String FONT_SERVICE_CLASS =
+            "com.android.server.FontService$Lifecycle";
     private static final String CONTENT_CAPTURE_MANAGER_SERVICE_CLASS =
             "com.android.server.contentcapture.ContentCaptureManagerService";
     private static final String SYSTEM_CAPTIONS_MANAGER_SERVICE_CLASS =
@@ -998,6 +1000,11 @@ public final class SystemServer {
         // Service to capture bugreports.
         t.traceBegin("StartBugreportManagerService");
         mSystemServiceManager.startService(BugreportManagerService.class);
+        t.traceEnd();
+
+        // Manages fonts
+        t.traceBeginAndSlog("StartFontService");
+        mSystemServiceManager.startService(FONT_SERVICE_CLASS);
         t.traceEnd();
 
         // Serivce for GPU and GPU driver.
