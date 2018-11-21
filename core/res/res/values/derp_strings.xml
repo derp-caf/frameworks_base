@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+	<?xml version="1.0" encoding="utf-8"?>
 <!--
      Copyright (C) 2017 CarbonROM
 
@@ -166,5 +166,10 @@
     <string name="config_alternativeDeviceKeyHandlerLib" translatable="false"></string>
     <!-- Name of that alternative key handler class -->
     <string name="config_alternativeDeviceKeyHandlerClass" translatable="false"></string>
+
+    <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_accessFontManager">access font manager</string>
+    <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_accessFontManager">Allows an application to access the font manager.</string>
 
 </resources>

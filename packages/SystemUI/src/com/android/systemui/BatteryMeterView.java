@@ -289,6 +289,8 @@ public class BatteryMeterView extends LinearLayout implements
         mBatteryPercentView.setText(pct);
     }
 
+}
+
     public void setIsQuickSbHeaderOrKeyguard(boolean qs) {
         mQsHeaderOrKeyguard = qs;
     }
