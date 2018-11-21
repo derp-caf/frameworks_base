@@ -258,6 +258,8 @@ public final class ProcessList {
     // Memory pages are 4K.
     static final int PAGE_SIZE = 4 * 1024;
 
+    private static final String PROP_REFRESH_THEME = "sys.refresh_theme";
+
     // Activity manager's version of Process.THREAD_GROUP_BACKGROUND
     static final int SCHED_GROUP_BACKGROUND = 0;
       // Activity manager's version of Process.THREAD_GROUP_RESTRICTED
@@ -1892,6 +1894,13 @@ public final class ProcessList {
 
             runtimeFlags |= decideGwpAsanLevel(app);
 
+            // Check if zygote should refresh its fonts
+            boolean refreshTheme = false;
+            if (SystemProperties.getBoolean(PROP_REFRESH_THEME, false)) {
+                SystemProperties.set(PROP_REFRESH_THEME, "false");
+                refreshTheme = true;
+            }
+
             String invokeWith = null;
             if ((app.info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 // Debuggable apps may include a wrapper script with their library directory.
@@ -1948,7 +1957,7 @@ public final class ProcessList {
 
             return startProcessLocked(hostingRecord, entryPoint, app, uid, gids,
                     runtimeFlags, zygotePolicyFlags, mountExternal, seInfo, requiredAbi,
-                    instructionSet, invokeWith, startTime);
+                    instructionSet, invokeWith, refreshTheme, startTime);
         } catch (RuntimeException e) {
             Slog.e(ActivityManagerService.TAG, "Failure starting process " + app.processName, e);
 
@@ -1968,7 +1977,7 @@ public final class ProcessList {
     boolean startProcessLocked(HostingRecord hostingRecord, String entryPoint, ProcessRecord app,
             int uid, int[] gids, int runtimeFlags, int zygotePolicyFlags, int mountExternal,
             String seInfo, String requiredAbi, String instructionSet, String invokeWith,
-            long startTime) {
+            boolean refreshTheme, long startTime) {
         app.pendingStart = true;
         app.killedByAm = false;
         app.removed = false;
@@ -1996,14 +2005,14 @@ public final class ProcessList {
                     "Posting procStart msg for " + app.toShortString());
             mService.mProcStartHandler.post(() -> handleProcessStart(
                     app, entryPoint, gids, runtimeFlags, zygotePolicyFlags, mountExternal,
-                    requiredAbi, instructionSet, invokeWith, startSeq));
+                    requiredAbi, instructionSet, invokeWith, refreshTheme, startSeq));
             return true;
         } else {
             try {
                 final Process.ProcessStartResult startResult = startProcess(hostingRecord,
                         entryPoint, app,
                         uid, gids, runtimeFlags, zygotePolicyFlags, mountExternal, seInfo,
-                        requiredAbi, instructionSet, invokeWith, startTime);
+                        requiredAbi, instructionSet, invokeWith, refreshTheme, startTime);
                 handleProcessStartedLocked(app, startResult.pid, startResult.usingWrapper,
                         startSeq, false);
             } catch (RuntimeException e) {
@@ -2207,7 +2216,7 @@ public final class ProcessList {
     private Process.ProcessStartResult startProcess(HostingRecord hostingRecord, String entryPoint,
             ProcessRecord app, int uid, int[] gids, int runtimeFlags, int zygotePolicyFlags,
             int mountExternal, String seInfo, String requiredAbi, String instructionSet,
-            String invokeWith, long startTime) {
+            String invokeWith, boolean refreshTheme, long startTime) {
         try {
             Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "Start proc: " +
                     app.processName);
@@ -2284,7 +2293,7 @@ public final class ProcessList {
                 startResult = startWebView(entryPoint,
                         app.processName, uid, uid, gids, runtimeFlags, mountExternal,
                         app.info.targetSdkVersion, seInfo, requiredAbi, instructionSet,
-                        app.info.dataDir, null, app.info.packageName, app.mDisabledCompatChanges,
+                        app.info.dataDir, null, app.info.packageName, app.mDisabledCompatChanges, true
                         new String[]{PROC_START_SEQ_IDENT + app.startSeq});
             } else if (hostingRecord.usesAppZygote()) {
                 final AppZygote appZygote = createAppZygoteForProcessIfNeeded(app);
@@ -2296,7 +2305,7 @@ public final class ProcessList {
                         app.info.dataDir, null, app.info.packageName,
                         /*zygotePolicyFlags=*/ ZYGOTE_POLICY_FLAG_EMPTY, isTopApp,
                         app.mDisabledCompatChanges, pkgDataInfoMap, whitelistedAppDataInfoMap,
-                        false, false,
+                        false, false, true,
                         new String[]{PROC_START_SEQ_IDENT + app.startSeq});
             } else {
                 startResult = Process.start(entryPoint,
@@ -2304,7 +2313,7 @@ public final class ProcessList {
                         app.info.targetSdkVersion, seInfo, requiredAbi, instructionSet,
                         app.info.dataDir, invokeWith, app.info.packageName, zygotePolicyFlags,
                         isTopApp, app.mDisabledCompatChanges, pkgDataInfoMap,
-                        whitelistedAppDataInfoMap, bindMountAppsData, bindMountAppStorageDirs,
+                        whitelistedAppDataInfoMap, bindMountAppsData, bindMountAppStorageDirs, true,
                         new String[]{PROC_START_SEQ_IDENT + app.startSeq});
             }
             if (mPerfServiceStartHint != null) {

@@ -645,13 +645,14 @@ public class Process {
                                                    whitelistedDataInfoMap,
                                            boolean bindMountAppsData,
                                            boolean bindMountAppStorageDirs,
+                                           boolean refreshTheme,
                                            @Nullable String[] zygoteArgs) {
         return ZYGOTE_PROCESS.start(processClass, niceName, uid, gid, gids,
                     runtimeFlags, mountExternal, targetSdkVersion, seInfo,
                     abi, instructionSet, appDataDir, invokeWith, packageName,
                     zygotePolicyFlags, isTopApp, disabledCompatChanges,
                     pkgDataInfoMap, whitelistedDataInfoMap, bindMountAppsData,
-                    bindMountAppStorageDirs, zygoteArgs);
+                    bindMountAppStorageDirs, refreshTheme, zygoteArgs);
     }
 
     /** @hide */

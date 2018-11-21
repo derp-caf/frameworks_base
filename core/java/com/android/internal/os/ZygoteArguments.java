@@ -82,6 +82,9 @@ class ZygoteArguments {
     private boolean mTargetSdkVersionSpecified;
     int mTargetSdkVersion;
 
+    /** from --refresh-theme */
+    boolean refreshTheme;
+
     /**
      * from --nice-name
      */
@@ -431,7 +434,10 @@ class ZygoteArguments {
                         "Invalid log sampling rate: " + rateStr, nfe);
                 }
                 expectRuntimeArgs = false;
-            } else if (arg.startsWith("--hidden-api-statslog-sampling-rate=")) {
+            } else if (arg.equals("--refresh_theme")) {
+                refreshTheme = true;
+              }
+              else if (arg.startsWith("--hidden-api-statslog-sampling-rate=")) {
                 String rateStr = getAssignmentValue(arg);
                 try {
                     mHiddenApiAccessStatslogSampleRate = Integer.parseInt(rateStr);

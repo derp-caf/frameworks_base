@@ -34,7 +34,7 @@ import android.system.ErrnoException;
 import android.system.Os;
 import android.system.StructPollfd;
 import android.util.Log;
-
+import android.graphics.Typeface;
 import dalvik.system.VMRuntime;
 
 import libcore.io.IoUtils;
@@ -148,6 +148,10 @@ class ZygoteConnection {
         if (parsedArgs.mAbiListQuery) {
             handleAbiListQuery();
             return null;
+        }
+
+        if (parsedArgs.refreshTheme) {
+            Typeface.recreateDefaults();
         }
 
         if (parsedArgs.mPidQuery) {
