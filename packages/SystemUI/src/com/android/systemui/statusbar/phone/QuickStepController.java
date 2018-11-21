@@ -44,6 +44,7 @@ import android.os.RemoteException;
 import android.util.FloatProperty;
 import android.util.Log;
 import android.util.Slog;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -267,7 +268,7 @@ public class QuickStepController implements GestureHelper {
                     int deltaX = (int) mPreviousUpEventX - (int) event.getX();
                     int deltaY = (int) mPreviousUpEventY - (int) event.getY();
                     boolean isDoubleTapReally = deltaX * deltaX + deltaY * deltaY < sDoubleTapSquare;
-                    if (isDoubleTapReally) XtendedUtils.switchScreenOff(mContext);
+                    if (isDoubleTapReally) DerpcafUtils.switchScreenOff(mContext);
                 } else {
                     // this is the first tap, let's go further and schedule a
                     // mDoubleTapCancelTimeout call in the action up event so after the set time
@@ -396,6 +397,7 @@ public class QuickStepController implements GestureHelper {
                     }
                     if (mBackActionScheduled) {
                         DerpcafUtils.sendKeycode(KeyEvent.KEYCODE_BACK, mHandler);
+                        mNavigationBarView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                     } else {
                         endQuickScrub(true /* animate */);
                     }
@@ -453,8 +455,8 @@ public class QuickStepController implements GestureHelper {
                 moveKbCursor(right, false);
             }
         };
-        XtendedUtils.moveKbCursor(KeyEvent.ACTION_UP, right);
-        XtendedUtils.moveKbCursor(KeyEvent.ACTION_DOWN, right);
+        DerpcafUtils.moveKbCursor(KeyEvent.ACTION_UP, right);
+        DerpcafUtils.moveKbCursor(KeyEvent.ACTION_DOWN, right);
         mHandler.postDelayed(r, firstTrigger ? 500 : 250);
     }
 
