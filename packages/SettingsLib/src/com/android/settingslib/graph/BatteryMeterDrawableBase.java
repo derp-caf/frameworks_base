@@ -72,6 +72,9 @@ public class BatteryMeterDrawableBase extends Drawable {
     private boolean mShowPercent;
     private int mMeterStyle;
 
+    private static final boolean SINGLE_DIGIT_PERCENT = false;
+    private static final boolean SHOW_100_PERCENT = false;
+
     private static final int FULL = 99;
 
     private static final float BOLT_LEVEL_THRESHOLD = 0.3f;  // opaque bolt below this fraction
@@ -489,14 +492,16 @@ public class BatteryMeterDrawableBase extends Drawable {
         boolean pctOpaque = false;
         float pctX = 0, pctY = 0;
         String pctText = null;
-        /*if (!mCharging && !mPowerSaveEnabled && level > mCriticalLevel && mShowPercent) {
+        if (!mCharging && !mPowerSaveEnabled && level > mCriticalLevel && mShowPercent) {
             mTextPaint.setColor(getColorForLevel(level));
             final float full = 0.38f;
             final float nofull = 0.5f;
             final float single = 0.75f;
-            mTextPaint.setTextSize(height * (mLevel == 100 ? full : nofull));
+            mTextPaint.setTextSize(height *
+                    (SINGLE_DIGIT_PERCENT ? single
+                            : (mLevel == 100 ? full : nofull)));
             mTextHeight = -mTextPaint.getFontMetrics().ascent;
-            pctText = String.valueOf(level != 100 ? level : "");
+            pctText = String.valueOf(SINGLE_DIGIT_PERCENT ? (level / 10) : level);
             pctX = mWidth * 0.5f + left;
             pctY = (mHeight + mTextHeight) * 0.47f + top;
             pctOpaque = levelTop > pctY;
@@ -506,7 +511,7 @@ public class BatteryMeterDrawableBase extends Drawable {
                 // cut the percentage text out of the overall shape
                 mShapePath.op(mTextPath, Path.Op.DIFFERENCE);
             }
-        }*/
+        }
 
         // draw the battery shape background
         c.drawPath(mShapePath, mFramePaint);
