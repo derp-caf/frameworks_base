@@ -1269,10 +1269,6 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
     }
 
-    public NotificationMediaManager getMediaManager() {
-        return mMediaManager;
-    }
-
     /**
      * Returns the {@link android.view.View.OnTouchListener} that will be invoked when the
      * background window of the status bar is clicked.
@@ -5276,7 +5272,6 @@ public class StatusBar extends SystemUI implements DemoMode,
                     Settings.System.STATUS_BAR_TICKER_TICK_DURATION),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
-                     Settings.System.PULSE_APPS_BLACKLIST),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.LESS_BORING_HEADS_UP),
@@ -5310,8 +5305,6 @@ public class StatusBar extends SystemUI implements DemoMode,
             } else if (uri.equals(Settings.System.getUriFor(
                 Settings.System.STATUS_BAR_TICKER_TICK_DURATION))) {
                 updateTickerTickDuration();
-            } else if (uri.equals(Settings.System.getUriFor(Settings.System.PULSE_APPS_BLACKLIST))) {
-                setPulseBlacklist();
             } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.LESS_BORING_HEADS_UP))) {
                 setUseLessBoringHeadsUp();
@@ -5334,7 +5327,6 @@ public class StatusBar extends SystemUI implements DemoMode,
             setQsPanelOptions();
             updateTickerAnimation();
             updateTickerTickDuration();
-	    setPulseBlacklist();
 	    setUseLessBoringHeadsUp();
 	 }
     }
@@ -5377,12 +5369,6 @@ public class StatusBar extends SystemUI implements DemoMode,
     private void setLockscreenMediaMetadata() {
         mLockscreenMediaMetadata = Settings.System.getIntForUser(mContext.getContentResolver(),
                 Settings.System.LOCKSCREEN_MEDIA_METADATA, 0, UserHandle.USER_CURRENT) == 1;
-    }
-
-    private void setPulseBlacklist() {
-        String blacklist = Settings.System.getStringForUser(mContext.getContentResolver(),
-                Settings.System.PULSE_APPS_BLACKLIST, UserHandle.USER_CURRENT);
-        getMediaManager().setPulseBlacklist(blacklist);
     }
 
     // Switches qs tile style to user selected.
