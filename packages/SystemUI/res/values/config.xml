@@ -569,7 +569,7 @@
     <integer name="watch_heap_limit">256000</integer>
 
     <!-- Whether to show VoLTE icon in the status bar -->
-    <bool name="config_display_volte">false</bool>
+    <bool name="config_display_volte">true</bool>
 
     <!-- On-The-Go -->
     <integer name="quick_settings_onthego_dialog_short_timeout">3000</integer>
