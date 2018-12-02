@@ -6302,7 +6302,7 @@ public final class Settings {
         /** @hide */
         private static final Validator SLIM_RECENTS_BLACKLIST_VALUES_VALIDATOR = ANY_STRING_VALIDATOR;
 
-        /**
+	/**
          * Whether to use icon pack for Recents
          * @hide
          */
@@ -6316,6 +6316,18 @@ public final class Settings {
          * @hide
          */
         public static final String LOCKSCREEN_ALBUM_ART_FILTER = "lockscreen_album_art_filter";
+
+        /**
+         * Whether to enable charge battery warning
+         * @hide
+         */
+        public static final String BATTERY_LEVEL_CHARGE_ALARM_ENABLED = "battery_level_charge_alarm_enabled";
+
+        /**
+         * Change level for charge battery warning
+         * @hide
+         */
+        public static final String SEEK_BAR_BATTERY_CHARGE_LEVEL_SOUND = "battery_level_charge_seek_bar";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
@@ -11650,6 +11662,12 @@ public final class Settings {
         public static final String CHARGING_VIBRATION_ENABLED = "charging_vibration_enabled";
 
         private static final Validator CHARGING_VIBRATION_ENABLED_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
+         * Ringtone for battery charge level warning.
+         * @hide
+         */
+        public static final String BATTERY_LEVEL_CHARGE_SOUND_ALARM = "battery_level_charge_ringtone";
 
         /**
          * Whether we keep the device on while the device is plugged in.
