@@ -5841,6 +5841,106 @@ public final class Settings {
         public static final String DOT_COLOR_SWITCH = "dot_color_switch";
 
         /**
+<<<<<<< HEAD
+=======
+         * Whether to enable charge battery warning
+         * @hide
+         */
+        public static final String BATTERY_LEVEL_CHARGE_ALARM_ENABLED = "battery_level_charge_alarm_enabled";
+
+	/**
+         * Whether to blend battery light colors between full and empty value.
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND = "battery_light_blend";
+
+        /** @hide */
+        private static final Validator BATTERY_LIGHT_BLEND_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
+         * Battery light blend full color.
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND_FULL_COLOR =
+                "battery_light_blend_full_color";
+
+        /** @hide */
+        private static final Validator BATTERY_LIGHT_BLEND_FULL_COLOR_VALIDATOR = ANY_INTEGER_VALIDATOR;
+
+        /**
+         * Battery light blend empty color.
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND_EMPTY_COLOR =
+                "battery_light_blend_empty_color";
+
+        /** @hide */
+        private static final Validator BATTERY_LIGHT_BLEND_EMPTY_COLOR_VALIDATOR = ANY_INTEGER_VALIDATOR;
+
+        /**
+         * Battery light blend color direction.
+         * @hide
+         */
+        public static final String BATTERY_LIGHT_BLEND_REVERSE = "battery_light_blend_reverse";
+
+        /** @hide */
+        private static final Validator BATTERY_LIGHT_BLEND_REVERSE_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
+         * Change level for charge battery warning
+         * @hide
+         */
+        public static final String SEEK_BAR_BATTERY_CHARGE_LEVEL_SOUND = "battery_level_charge_seek_bar";
+
+        /**
+         * Whether the battery light should only be enabled on fully charged battery.
+         * The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED =
+                "battery_light_only_fully_charged";
+
+        /** @hide */
+        private static final Validator OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED_VALIDATOR =
+                BOOLEAN_VALIDATOR;
+
+        /**
+         * What color to use for the battery LED while charging - low
+         * @hide
+         */
+        public static final String OMNI_FAST_BATTERY_LIGHT_COLOR = "fast_battery_light_color";
+
+        /** @hide */
+        private static final Validator OMNI_FAST_BATTERY_LIGHT_COLOR_VALIDATOR =
+                ANY_STRING_VALIDATOR;
+
+        /**
+         * Whether the fast charging battery light is enabled
+         * The value is boolean (1 or 0).
+         * @hide
+         */
+        public static final String OMNI_FAST_CHARGING_LED_ENABLED = "fast_charging_led_enabled";
+
+        /** @hide */
+        private static final Validator OMNI_FAST_CHARGING_LED_ENABLED_VALIDATOR =
+                BOOLEAN_VALIDATOR;
+
+        /**
+         * @hide
+         */
+        public static final String BOTTOM_GESTURE_TRIGGER_TIMEOUT = "bottom_gesture_navigation_trigger_timeout";
+
+        private static final Validator BOTTOM_GESTURE_TRIGGER_TIMEOUT_VALIDATOR = ANY_INTEGER_VALIDATOR;
+
+        /**
+         * @hide
+         */
+        public static final String BOTTOM_GESTURE_SWIPE_LIMIT = "bottom_gesture_navigation_swipe_limit";
+
+        private static final Validator BOTTOM_GESTURE_SWIPE_LIMIT_VALIDATOR = ANY_INTEGER_VALIDATOR;
+
+        /**
+>>>>>>> 54ba79f9810... base: op navigation gesture tweaks [1/2]
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
@@ -5926,7 +6026,20 @@ public final class Settings {
             OMNI_ASPECT_RATIO_APPS_ENABLED,
             OMNI_ASPECT_RATIO_APPS_LIST,
             VOLUME_KEYS_CONTROL_RING_TONE,
+<<<<<<< HEAD
             QS_SHOW_BRIGHTNESS_BUTTONS
+=======
+            QS_SHOW_BRIGHTNESS_BUTTONS,
+            OMNI_FAST_BATTERY_LIGHT_COLOR,
+            OMNI_FAST_CHARGING_LED_ENABLED,
+            OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED,
+            BATTERY_LIGHT_BLEND,
+            BATTERY_LIGHT_BLEND_FULL_COLOR,
+            BATTERY_LIGHT_BLEND_EMPTY_COLOR,
+            BATTERY_LIGHT_BLEND_REVERSE,
+            BOTTOM_GESTURE_TRIGGER_TIMEOUT,
+            BOTTOM_GESTURE_SWIPE_LIMIT,
+>>>>>>> 54ba79f9810... base: op navigation gesture tweaks [1/2]
         };
 
         /**
@@ -6068,14 +6181,14 @@ public final class Settings {
             PRIVATE_SETTINGS.add(STATUS_BAR_LOGO);
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_STATE);
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_TYPE);
-            PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_AUTOHIDE_THRESHOLD);	   
-	    PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_HIDEARROW); 
+            PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_AUTOHIDE_THRESHOLD);
+	    PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_HIDEARROW);
             PRIVATE_SETTINGS.add(OMNI_USE_BOTTOM_GESTURE_NAVIGATION);
             PRIVATE_SETTINGS.add(OMNI_LONG_PRESS_POWER_TORCH);
             PRIVATE_SETTINGS.add(POCKET_JUDGE);
             PRIVATE_SETTINGS.add(NOTIFICATION_SOUND_VIB_SCREEN_ON);
             PRIVATE_SETTINGS.add(RECENTS_COMPONENT);
-            PRIVATE_SETTINGS.add(QS_TILE_STYLE);       
+            PRIVATE_SETTINGS.add(QS_TILE_STYLE);
             PRIVATE_SETTINGS.add(QS_ROWS_PORTRAIT);
             PRIVATE_SETTINGS.add(QS_ROWS_LANDSCAPE);
             PRIVATE_SETTINGS.add(QS_COLUMNS_PORTRAIT);
@@ -6091,8 +6204,21 @@ public final class Settings {
             PRIVATE_SETTINGS.add(QS_HEADER_STYLE);
             PRIVATE_SETTINGS.add(VOLUME_KEYS_CONTROL_RING_TONE);
             PRIVATE_SETTINGS.add(QS_SHOW_BRIGHTNESS_BUTTONS);
+<<<<<<< HEAD
         }
 
+=======
+            PRIVATE_SETTINGS.add(OMNI_FAST_BATTERY_LIGHT_COLOR);
+            PRIVATE_SETTINGS.add(OMNI_FAST_CHARGING_LED_ENABLED);
+            PRIVATE_SETTINGS.add(OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED);
+            PRIVATE_SETTINGS.add(BATTERY_LIGHT_BLEND);
+            PRIVATE_SETTINGS.add(BATTERY_LIGHT_BLEND_FULL_COLOR);
+            PRIVATE_SETTINGS.add(BATTERY_LIGHT_BLEND_EMPTY_COLOR);
+            PRIVATE_SETTINGS.add(BATTERY_LIGHT_BLEND_REVERSE);
+            PRIVATE_SETTINGS.add(BOTTOM_GESTURE_TRIGGER_TIMEOUT);
+            PRIVATE_SETTINGS.add(BOTTOM_GESTURE_SWIPE_LIMIT);
+	}
+>>>>>>> 54ba79f9810... base: op navigation gesture tweaks [1/2]
 
         /**
          * Whether to display the torch option in the power menu
@@ -6221,6 +6347,18 @@ public final class Settings {
                     OMNI_ASPECT_RATIO_APPS_LIST_VALIDATOR);
             VALIDATORS.put(VOLUME_KEYS_CONTROL_RING_TONE,VOLUME_KEYS_CONTROL_RING_TONE_VALIDATOR);
             VALIDATORS.put(QS_SHOW_BRIGHTNESS_BUTTONS, QS_SHOW_BRIGHTNESS_BUTTONS_VALIDATOR);
+<<<<<<< HEAD
+=======
+            VALIDATORS.put(OMNI_FAST_BATTERY_LIGHT_COLOR, OMNI_FAST_BATTERY_LIGHT_COLOR_VALIDATOR);
+            VALIDATORS.put(OMNI_FAST_CHARGING_LED_ENABLED, OMNI_FAST_CHARGING_LED_ENABLED_VALIDATOR);
+            VALIDATORS.put(OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED, OMNI_BATTERY_LIGHT_ONLY_FULLY_CHARGED_VALIDATOR);
+            VALIDATORS.put(BATTERY_LIGHT_BLEND, BATTERY_LIGHT_BLEND_VALIDATOR);
+            VALIDATORS.put(BATTERY_LIGHT_BLEND_FULL_COLOR, BATTERY_LIGHT_BLEND_FULL_COLOR_VALIDATOR);
+            VALIDATORS.put(BATTERY_LIGHT_BLEND_EMPTY_COLOR, BATTERY_LIGHT_BLEND_EMPTY_COLOR_VALIDATOR);
+            VALIDATORS.put(BATTERY_LIGHT_BLEND_REVERSE, BATTERY_LIGHT_BLEND_REVERSE_VALIDATOR);
+            VALIDATORS.put(BOTTOM_GESTURE_TRIGGER_TIMEOUT, BOTTOM_GESTURE_TRIGGER_TIMEOUT_VALIDATOR);
+            VALIDATORS.put(BOTTOM_GESTURE_SWIPE_LIMIT, BOTTOM_GESTURE_SWIPE_LIMIT_VALIDATOR);
+>>>>>>> 54ba79f9810... base: op navigation gesture tweaks [1/2]
         }
 
         /**
