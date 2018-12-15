@@ -54,6 +54,9 @@
     <!-- What the UI should display for "Msisdn" unless overridden by the SIM-->
     <string name="defaultMsisdnAlphaTag">MSISDN1</string>
 
+    <!-- [CHAR LIMIT=NONE] Error when a package is installed but got the missing fonts.xml file, notifying the user why it isn't showing up. -->
+    <string name="fontservice_incompatible_font">The font package you\'ve installed is not compatible due to missing fonts.xml on their files. Please contact the package developer for support.</string>
+
     <!-- For GsmMmiCode.java --> <skip />
     <!-- Displayed when the user dialed an MMI code whose function
          could not be performed. This will be displayed in a toast. -->
