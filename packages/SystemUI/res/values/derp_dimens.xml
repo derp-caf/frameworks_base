@@ -25,6 +25,6 @@
     <dimen name="qs_temperatur_icon_size">16sp</dimen>
 
     <!-- OmniJaws -->
-    <dimen name="current_weather_image_size">42dp</dimen>
+    <dimen name="current_weather_image_size">30dp</dimen>
 
 </resources>
