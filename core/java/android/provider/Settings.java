@@ -5196,7 +5196,15 @@ public final class Settings {
                 "use_bottom_gesture_navigation";
 
         /** @hide */
+
         private static final Validator OMNI_USE_BOTTOM_GESTURE_NAVIGATION_VALIDATOR =
+
+	/**
+	* @hide
+	*/
+        public static final String OMNI_LONG_PRESS_POWER_TORCH =
+                "long_press_power_torch";
+         private static final Validator OMNI_LONG_PRESS_POWER_TORCH_VALIDATOR =
                 BOOLEAN_VALIDATOR;
 
         /**
@@ -5276,7 +5284,8 @@ public final class Settings {
             STATUSBAR_CLOCK_DATE_DISPLAY,
             STATUSBAR_CLOCK_DATE_STYLE,
             STATUSBAR_CLOCK_DATE_FORMAT,
-            OMNI_USE_BOTTOM_GESTURE_NAVIGATION
+            OMNI_USE_BOTTOM_GESTURE_NAVIGATION,
+            OMNI_LONG_PRESS_POWER_TORCH
         };
 
         /**
@@ -5423,6 +5432,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_AUTOHIDE_THRESHOLD);	   
 	    PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_HIDEARROW); 
             PRIVATE_SETTINGS.add(OMNI_USE_BOTTOM_GESTURE_NAVIGATION);
+            PRIVATE_SETTINGS.add(OMNI_LONG_PRESS_POWER_TORCH);
         }
 
 
@@ -5541,6 +5551,7 @@ public final class Settings {
             VALIDATORS.put(STATUSBAR_CLOCK_DATE_FORMAT, STATUSBAR_CLOCK_DATE_FORMAT_VALIDATOR);
             VALIDATORS.put(MUTE_ANNOYING_NOTIFICATIONS_THRESHOLD, MUTE_ANNOYING_NOTIFICATIONS_THRESHOLD_VALIDATOR);
             VALIDATORS.put(OMNI_USE_BOTTOM_GESTURE_NAVIGATION, OMNI_USE_BOTTOM_GESTURE_NAVIGATION_VALIDATOR);
+            VALIDATORS.put(OMNI_LONG_PRESS_POWER_TORCH, OMNI_LONG_PRESS_POWER_TORCH_VALIDATOR);
         }
 
         /**
