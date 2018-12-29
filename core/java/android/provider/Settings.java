@@ -6337,6 +6337,11 @@ public final class Settings {
         public static final String SEEK_BAR_BATTERY_CHARGE_LEVEL_SOUND = "battery_level_charge_seek_bar";
 
         /**
+         * @hide
+         */
+        public static final String SWITCH_STYLE = "switch_style";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
