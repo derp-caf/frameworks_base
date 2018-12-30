@@ -5354,8 +5354,11 @@ public class StatusBar extends SystemUI implements DemoMode,
                 updateQSHeaderStyle();
             } else if (uri.equals(Settings.Secure.getUriFor(Settings.Secure.PULSE_APPS_BLACKLIST))) {
                 setPulseBlacklist();
-            } else if (uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_CLOCK_SELECTION))) {
-   	    }
+            } else if (uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_CLOCK)) ||
+                uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_INFO)) ||
+                uri.equals(Settings.System.getUriFor(Settings.System.LOCKSCREEN_CLOCK_SELECTION))) {
+	        updateKeyguardStatusSettings();
+	    }
 	    update();
         }
 
@@ -5372,6 +5375,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             updateTickerTickDuration();
 	    setUseLessBoringHeadsUp();
 	    setPulseBlacklist();
+	    updateKeyguardStatusSettings();
 	 }
     }
 
@@ -5399,6 +5403,10 @@ public class StatusBar extends SystemUI implements DemoMode,
         splitAndAddToArrayList(mBlacklist, blackString, "\\|");
     }
 
+    private void updateKeyguardStatusSettings() {
+         mNotificationPanel.updateKeyguardStatusSettings();
+    }
+    
     private void setLockscreenDoubleTapToSleep() {
         if (mStatusBarWindow != null) {
             mStatusBarWindow.setLockscreenDoubleTapToSleep();
