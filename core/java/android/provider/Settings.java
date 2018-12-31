@@ -4400,6 +4400,14 @@ public final class Settings {
         */
        public static final String BATTERY_LIGHT_REALLYFULL_COLOR = "battery_light_reallyfull_color";
 
+         * Select which lockscreen clock style to display
+         * @hide
+         */
+        public static final String LOCKSCREEN_CLOCK_SELECTION = "lockscreen_clock_selection";
+
+        /**
+	 * Wether to show network traffic indicator in statusbar
+
         /**
          * Wheter to show network traffic indicator in QS statusbar header
          * @hide
