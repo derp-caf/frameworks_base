@@ -251,10 +251,10 @@ public class KeyguardStatusView extends GridLayout implements
         if (mSpideyClockView != null) {
             mVisibleInDoze.add(mSpideyClockView);
 	}
-                if (mDotClockView != null) {
+        if (mDotClockView != null) {
             mVisibleInDoze.add(mDotClockView);
         }
-                if (mSpectrumClockView != null) {
+        if (mSpectrumClockView != null) {
             mVisibleInDoze.add(mSpectrumClockView);
         }
 
@@ -1148,7 +1148,10 @@ public class KeyguardStatusView extends GridLayout implements
                 mCustomClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
                 mCustomNumClockView.setVisibility(View.GONE);
-		mSpideyClockView.setVisibility(View.GONE);
+                mSpideyClockView.setVisibility(View.GONE);
+                mDotClockView.setVisibility(View.GONE);
+                mSpectrumClockView.setVisibility(View.GONE);
+                mSneekyClockView.setVisibility(View.GONE);
                 break;
             case 5: // sammy (bold)
                 mClockView.setVisibility(mDarkAmount != 1 ? (mShowClock ? View.VISIBLE :
@@ -1167,8 +1170,10 @@ public class KeyguardStatusView extends GridLayout implements
                 mCustomClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
                 mCustomNumClockView.setVisibility(View.GONE);
-		mDotClockView.setVisibility(View.GONE);
-		mSpectrumClockView.setVisibility(View.GONE);
+                mSpideyClockView.setVisibility(View.GONE);
+                mDotClockView.setVisibility(View.GONE);
+                mSpectrumClockView.setVisibility(View.GONE);
+                mSneekyClockView.setVisibility(View.GONE);
                 break;
             case 7: // sammy accent
                 mClockView.setVisibility(mDarkAmount != 1 ? (mShowClock ? View.VISIBLE :
@@ -1176,8 +1181,10 @@ public class KeyguardStatusView extends GridLayout implements
                 mCustomClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
 		mCustomNumClockView.setVisibility(View.GONE);
-		mDotClockView.setVisibility(View.GONE);
-		mSneekyClockView.setVisibility(View.GONE);
+                mSpideyClockView.setVisibility(View.GONE);
+                mDotClockView.setVisibility(View.GONE);
+                mSpectrumClockView.setVisibility(View.GONE);
+                mSneekyClockView.setVisibility(View.GONE);
                 break;
             case 8: // custom analog with numbers
                 mCustomNumClockView.setVisibility(mDarkAmount != 1 ? (mShowClock ? View.VISIBLE :
@@ -1196,7 +1203,6 @@ public class KeyguardStatusView extends GridLayout implements
                 mClockView.setVisibility(View.GONE);
                 mCustomClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
-		mSpideyClockView.setVisibility(View.GONE);
 		mDotClockView.setVisibility(View.GONE);
 		mSpectrumClockView.setVisibility(View.GONE);
 		mSneekyClockView.setVisibility(View.GONE);
@@ -1216,20 +1222,20 @@ public class KeyguardStatusView extends GridLayout implements
                        View.GONE) : View.VISIBLE);
                 mClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
-				mSpideyClockView.setVisibility(View.GONE);
-				mCustomNumClockView.setVisibility(View.GONE);
-				mDotClockView.setVisibility(View.GONE);
-				mSneekyClockView.setVisibility(View.GONE);
+		mSpideyClockView.setVisibility(View.GONE);
+		mCustomNumClockView.setVisibility(View.GONE);
+		mDotClockView.setVisibility(View.GONE);
+		mSneekyClockView.setVisibility(View.GONE);
                 break;
             case 16: // sneeky analog
                 mSneekyClockView.setVisibility(mDarkAmount != 1 ? (mShowClock ? View.VISIBLE :
                        View.GONE) : View.VISIBLE);
                 mClockView.setVisibility(View.GONE);
                 mDuClockView.setVisibility(View.GONE);
-				mSpideyClockView.setVisibility(View.GONE);
-				mCustomNumClockView.setVisibility(View.GONE);
-				mDotClockView.setVisibility(View.GONE);
-				mSpectrumClockView.setVisibility(View.GONE);
+		mSpideyClockView.setVisibility(View.GONE);
+		mCustomNumClockView.setVisibility(View.GONE);
+		mDotClockView.setVisibility(View.GONE);
+		mSpectrumClockView.setVisibility(View.GONE);
                 break;
         }
     }
