@@ -26,8 +26,9 @@
     <dimen name="net_traffic_txt_img_padding">2dp</dimen>
 
     <!-- header -->
-    <dimen name="qs_header_image_offset">0dp</dimen>
-    <dimen name="qs_header_image_side_margin">0dp</dimen>
+    <dimen name="qs_header_image_offset">25dp</dimen>
+    <dimen name="qs_header_image_side_margin">4dp</dimen>
+    <dimen name="qs_header_image_bottom_margin">4dp</dimen>
 
     <!-- Height of the battery circle icon in the status bar. -->
     <dimen name="status_bar_battery_circle_icon_height">19.5dp</dimen>
