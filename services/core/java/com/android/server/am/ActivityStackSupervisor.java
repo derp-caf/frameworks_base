@@ -185,10 +185,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import android.os.AsyncTask;
+import com.android.internal.app.procstats.ProcessStats;
 
 public class ActivityStackSupervisor extends ConfigurationContainer implements DisplayListener,
         RecentTasks.Callbacks {
@@ -3173,6 +3176,14 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                 pr.waitingToKill = "remove task";
             }
         }
+        if(removeFromRecents) {
+            try {
+                new PreferredAppsTask().execute();
+            } catch (Exception e) {
+                Slog.v (TAG, "Exception: " + e);
+            }
+
+        }
     }
 
     /**
@@ -3999,6 +4010,10 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                         stops = new ArrayList<>();
                     }
                     stops.add(s);
+
+                    // Make sure to remove it in all cases in case we entered this block with
+                    // shouldSleepOrShutDown
+                    mActivitiesWaitingForVisibleActivity.remove(s);
                     mStoppingActivities.remove(activityNdx);
                 }
             }
@@ -4911,7 +4926,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
             return mService.getActivityStartController().startActivityInPackage(
                     task.mCallingUid, callingPid, callingUid, callingPackage, intent, null, null,
                     null, 0, 0, options, userId, task, "startActivityFromRecents",
-                    false /* validateIncomingUser */);
+                    false /* validateIncomingUser */, null /* originatingPendingIntent */);
         } finally {
             if (windowingMode == WINDOWING_MODE_SPLIT_SCREEN_PRIMARY && task != null) {
                 // If we are launching the task in the docked stack, put it into resizing mode so
@@ -5024,5 +5039,30 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                     + ", acquire at " + TimeUtils.formatUptime(mAcquireTime) + "}";
         }
     }
+
+    class PreferredAppsTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            String res = null;
+            if (mUxPerf != null
+                    && mService.getMemoryTrimLevel() < ProcessStats.ADJ_MEM_FACTOR_CRITICAL) {
+                res = mUxPerf.perfUXEngine_trigger(BoostFramework.UXE_TRIGGER);
+                if (res == null)
+                    return null;
+                String[] p_apps = res.split("/");
+                if (p_apps.length != 0) {
+                    ArrayList<String> apps_l = new ArrayList(Arrays.asList(p_apps));
+                    Bundle bParams = new Bundle();
+                    if (bParams == null)
+                        return null;
+                    bParams.putStringArrayList("start_empty_apps", apps_l);
+                    mService.startActivityAsUserEmpty(null, null, null, null,
+                                  null, null, 0, 0, null, bParams, 0);
+                }
+            }
+            return null;
+        }
+    }
+
 
 }

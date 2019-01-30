@@ -209,7 +209,6 @@ import java.util.List;
 import java.util.Objects;
 import android.util.BoostFramework;
 
-import android.os.AsyncTask;
 import android.util.BoostFramework;
 
 /**
@@ -708,9 +707,13 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
         final boolean inPictureInPictureMode = inPinnedWindowingMode() && targetStackBounds != null;
         if (inPictureInPictureMode != mLastReportedPictureInPictureMode || forceUpdate) {
             // Picture-in-picture mode changes also trigger a multi-window mode change as well, so
-            // update that here in order
+            // update that here in order. Set the last reported MW state to the same as the PiP
+            // state since we haven't yet actually resized the task (these callbacks need to
+            // preceed the configuration change from the resiez.
+            // TODO(110009072): Once we move these callbacks to the client, remove all logic related
+            // to forcing the update of the picture-in-picture mode as a part of the PiP animation.
             mLastReportedPictureInPictureMode = inPictureInPictureMode;
-            mLastReportedMultiWindowMode = inMultiWindowMode();
+            mLastReportedMultiWindowMode = inPictureInPictureMode;
             final Configuration newConfig = task.computeNewOverrideConfigurationForBounds(
                     targetStackBounds, null);
             schedulePictureInPictureModeChanged(newConfig);
@@ -789,30 +792,6 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
 
         if (!reparenting) {
             onParentChanged();
-        }
-    }
-
-    private class PreferredAppsTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... params) {
-            String res = null;
-            if (mUxPerf != null
-                    && service.getMemoryTrimLevel() < ProcessStats.ADJ_MEM_FACTOR_CRITICAL) {
-                res = mUxPerf.perfUXEngine_trigger(BoostFramework.UXE_TRIGGER);
-                if (res == null)
-                    return null;
-                String[] p_apps = res.split("/");
-                if (p_apps.length != 0) {
-                    ArrayList<String> apps_l = new ArrayList(Arrays.asList(p_apps));
-                    Bundle bParams = new Bundle();
-                    if (bParams == null)
-                        return null;
-                    bParams.putStringArrayList("start_empty_apps", apps_l);
-                    service.startActivityAsUserEmpty(null, null, intent, null,
-                                  null, null, 0, 0, null, bParams, 0);
-                }
-            }
-            return null;
         }
     }
 
@@ -1895,9 +1874,9 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
                 service.mHomeProcess = app;
             }
             try {
-                new PreferredAppsTask().execute();
+                mStackSupervisor.new PreferredAppsTask().execute();
             } catch (Exception e) {
-                Log.v (TAG, "Exception: " + e);
+                Slog.v (TAG, "Exception: " + e);
             }
         }
         if (nowVisible) {
