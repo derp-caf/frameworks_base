@@ -1849,14 +1849,8 @@ public class StatusBar extends SystemUI implements DemoMode,
     @Override
     public void updateMediaMetaData(boolean metaDataChanged, boolean allowEnterAnimation) {
         Trace.beginSection("StatusBar#updateMediaMetaData");
-
         // ensure visualizer is visible regardless of artwork
         mMediaManager.setMediaPlaying();
-
-        if (!SHOW_LOCKSCREEN_MEDIA_ARTWORK) {
-            Trace.endSection();
-            return;
-        }
 
         if (mBackdrop == null) {
             Trace.endSection();
@@ -1882,7 +1876,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
 
         Drawable artworkDrawable = null;
-        if (mediaMetadata != null && mLockscreenMediaMetadata) {
+        if (mediaMetadata != null && SHOW_LOCKSCREEN_MEDIA_ARTWORK && mLockscreenMediaMetadata) {
             Bitmap artworkBitmap = mediaMetadata.getBitmap(MediaMetadata.METADATA_KEY_ART);
             if (artworkBitmap == null) {
                 artworkBitmap = mediaMetadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
