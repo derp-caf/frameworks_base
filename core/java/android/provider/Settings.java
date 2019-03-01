@@ -4401,10 +4401,16 @@ public final class Settings {
        public static final String BATTERY_LIGHT_REALLYFULL_COLOR = "battery_light_reallyfull_color";
 
         /**
-         * Wheter to show network traffic indicator in statusbar
+         * Wheter to show network traffic indicator in QS statusbar header
          * @hide
          */
         public static final String NETWORK_TRAFFIC_STATE = "network_traffic_state";
+
+	/**
+         * Wheter to show network traffic indicator in statusbar
+         * @hide
+         */
+        public static final String NETWORK_TRAFFIC_STATE_SB = "network_traffic_state_sb";
 
         /**
 	 ** What to show in network traffic indicator in statusbar
