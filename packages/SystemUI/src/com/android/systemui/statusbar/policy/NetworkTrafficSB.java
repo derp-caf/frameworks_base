@@ -68,6 +68,8 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
     private int mVisibleState = -1;
     private boolean mTrafficVisible = false;
     private boolean mSystemIconVisible = true;
+    private boolean indicatorUp = false;
+    private boolean indicatorDown = false;
 
     private boolean mScreenOn = true;
 
@@ -109,10 +111,12 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
                 if (!output.contentEquals(getText())) {
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, (float)txtSize);
                     setText(output);
+		    indicatorDown = true;
                 }
                 mTrafficVisible = true;
             }
             updateVisibility();
+	    updateTrafficDrawable();
 
             // Post delayed message to refresh in ~1000ms
             totalRxBytes = newTotalRxBytes;
@@ -194,8 +198,8 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
     public NetworkTrafficSB(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         final Resources resources = getResources();
-        txtSize = resources.getDimensionPixelSize(R.dimen.net_traffic_multi_text_size);
-        txtImgPadding = resources.getDimensionPixelSize(R.dimen.net_traffic_txt_img_padding);
+        txtSize = resources.getDimensionPixelSize(R.dimen.net_sbtraffic_multi_text_size);
+	txtImgPadding = resources.getDimensionPixelSize(R.dimen.net_sbtraffic_txt_img_padding);
         mTintColor = resources.getColor(android.R.color.white);
         Handler mHandler = new Handler();
         SettingsObserver settingsObserver = new SettingsObserver(mHandler);
@@ -286,29 +290,37 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
     }
 
     private void updateTrafficDrawable() {
-        int intTrafficDrawable;
-        if (mIsEnabled) {
-            intTrafficDrawable = R.drawable.stat_sys_network_traffic_updown;
-        } else {
-            intTrafficDrawable = 0;
-        }
-        if (intTrafficDrawable != 0) {
-            Drawable d = getContext().getDrawable(intTrafficDrawable);
-            d.setColorFilter(mTintColor, Mode.SRC_ATOP);
-            setCompoundDrawablePadding(txtImgPadding);
-            setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
-        } else {
-            setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-        }
+        int indicatorDrawable;
+	if (mIsEnabled) {
+            if (indicatorUp) {
+	        indicatorDrawable = R.drawable.stat_sys_network_traffic_up_arrow;
+                Drawable d = getContext().getDrawable(indicatorDrawable);
+                d.setColorFilter(mTintColor, Mode.MULTIPLY);
+                setCompoundDrawablePadding(txtImgPadding);
+                setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
+            } else if (indicatorDown) {
+                indicatorDrawable = R.drawable.stat_sys_network_traffic_down_arrow;
+                Drawable d = getContext().getDrawable(indicatorDrawable);
+                d.setColorFilter(mTintColor, Mode.MULTIPLY);
+                setCompoundDrawablePadding(txtImgPadding);
+                setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
+            } else {
+                setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+            }
+	}
         setTextColor(mTintColor);
+	indicatorUp = false;
+	indicatorDown = false;
     }
 
     public void onDensityOrFontScaleChanged() {
         final Resources resources = getResources();
-        txtSize = resources.getDimensionPixelSize(R.dimen.net_traffic_multi_text_size);
-        txtImgPadding = resources.getDimensionPixelSize(R.dimen.net_traffic_multi_text_size);
+        txtSize = resources.getDimensionPixelSize(R.dimen.net_sbtraffic_multi_text_size);
+	txtImgPadding = resources.getDimensionPixelSize(R.dimen.net_sbtraffic_txt_img_padding);
         setTextSize(TypedValue.COMPLEX_UNIT_PX, (float)txtSize);
-        setCompoundDrawablePadding(txtImgPadding);
+	setCompoundDrawablePadding(txtImgPadding);
+        setTypeface(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
+        setGravity(Gravity.RIGHT);
     }
 
     @Override
