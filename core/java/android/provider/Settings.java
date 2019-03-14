@@ -4982,6 +4982,12 @@ public final class Settings {
          */
         public static final String SCREEN_STATE_OFF_DELAY = "screen_state_off_delay";
 
+	/**
+         * Whether to disable showing arrows in statusbar network traffic indicators
+         * @hide
+         */
+        public static final String NETWORK_TRAFFIC_HIDEARROW_SB = "network_traffic_hidearrow_sb";
+
         /**
          * @hide
          */
