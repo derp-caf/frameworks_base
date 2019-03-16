@@ -6433,6 +6433,7 @@ message MetricsEvent {
 
     //DERP
     DERPZONE = 1999;
+    DERP = 2000;
 
     // Add new aosp constants above this line.
     // END OF AOSP CONSTANTS
