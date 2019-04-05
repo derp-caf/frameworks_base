@@ -32,4 +32,6 @@
 
     <color name="analog_clock_face_color_theme">@*android:color/primary_device_default_settings</color>
 
+    <color name="custom_text_clock_top_color">#e7b465</color>
+
 </resources>
