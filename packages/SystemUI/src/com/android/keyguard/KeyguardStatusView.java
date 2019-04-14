@@ -1638,8 +1638,17 @@ public class KeyguardStatusView extends GridLayout implements
             case 8: // custom analog with numbers
                 params.addRule(RelativeLayout.BELOW, R.id.custom_num_clock_view);
                 break;
-            case 10: // spidey analog
+            case 13: // spidey analog
                 params.addRule(RelativeLayout.BELOW, R.id.spidey_clock_view);
+                break;
+            case 14: // dot analog
+                params.addRule(RelativeLayout.BELOW, R.id.dot_clock_view);
+                break;
+            case 15: // spectrum analog
+                params.addRule(RelativeLayout.BELOW, R.id.spectrum_clock_view);
+                break;
+            case 16: // sneeky analog
+                params.addRule(RelativeLayout.BELOW, R.id.sneeky_clock_view);
                 break;
 
         }
