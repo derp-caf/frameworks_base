@@ -239,4 +239,8 @@
     <!--Google sound search tile -->
     <string name="quick_settings_sound_search">Sound Search</string>
 
+    <!-- CustomText clock -->
+    <string name="high_noon_first_row">DERP</string>
+    <string name="high_noon_second_row">TIME</string>
+
 </resources>
