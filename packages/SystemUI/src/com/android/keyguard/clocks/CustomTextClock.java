@@ -161,7 +161,7 @@ public class CustomTextClock extends TextView {
             setTextColor(mClockColor);
         }
         if (handType == 2) {
-            setText(topText);
+            //setText(topText);
             setTextColor(ColorText.getWallColor(mContext));
         } else {
 	    setTextColor(mClockColor);
