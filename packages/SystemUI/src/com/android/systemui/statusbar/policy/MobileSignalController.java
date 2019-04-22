@@ -100,8 +100,10 @@ public class MobileSignalController extends SignalController<
     private int mCallState = TelephonyManager.CALL_STATE_IDLE;
 
     /****************************5G****************************/
-    private FiveGStateListener mFiveGStateListener;
-    private FiveGServiceState mFiveGState;
+    @VisibleForTesting
+    FiveGStateListener mFiveGStateListener;
+    @VisibleForTesting
+    FiveGServiceState mFiveGState;
     private final int NUM_LEVELS_ON_5G;
     /**********************************************************/
 
@@ -825,7 +827,7 @@ public class MobileSignalController extends SignalController<
     }
 
     public void registerFiveGStateListener(FiveGServiceClient client) {
-        int phoneId = SubscriptionManager.getPhoneId(mSubscriptionInfo.getSubscriptionId());
+        int phoneId = mSubscriptionInfo.getSimSlotIndex();
         client.registerListener(phoneId, mFiveGStateListener);
     }
 
