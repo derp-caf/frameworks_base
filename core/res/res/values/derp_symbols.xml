@@ -186,15 +186,6 @@
   <!-- Settings icon tint color -->
   <java-symbol type="color" name="settings_icon_tint_color" />
 
-  <!-- Proximity check on screen on -->
-  <java-symbol type="bool" name="config_proximityCheckOnWake" />
-
-  <!-- Proximity check timeout -->
-  <java-symbol type="integer" name="config_proximityCheckTimeout" />
-
-  <!-- Proximity check on screen on default -->
-  <java-symbol type="bool" name="config_proximityCheckOnWakeEnabledByDefault" />
-
   <!-- Pocket Lock -->
   <java-symbol type="layout" name="pocket_lock_view_layout" />
   <java-symbol type="id" name="pocket_hint_container" />
