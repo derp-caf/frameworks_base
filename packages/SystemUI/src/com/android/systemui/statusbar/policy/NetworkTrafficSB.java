@@ -50,7 +50,7 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
     private static final int KB = 1024;
     private static final int MB = KB * KB;
     private static final int GB = MB * KB;
-    private static final String symbol = "/s";
+    private static final String symbol = "B/s";
 
     private static DecimalFormat decimalFormat = new DecimalFormat("##0.#");
     static {
@@ -143,9 +143,9 @@ public class NetworkTrafficSB extends TextView implements StatusIconDisplayable 
         private String formatOutput(long timeDelta, long data, String symbol) {
             long speed = (long)(data / (timeDelta / 1000F));
 	    if (speed < KB) {
-		return decimalFormat.format(speed / (float)KB) + 'K' + symbol;
+		return decimalFormat.format(speed) + symbol;
             } else if (speed < MB) {
-                return decimalFormat.format(speed / (float)KB) + 'K' + symbol;
+                return decimalFormat.format(speed / (float)KB) + 'k' + symbol;
             } else if (speed < GB) {
                 return decimalFormat.format(speed / (float)MB) + 'M' + symbol;
             }
