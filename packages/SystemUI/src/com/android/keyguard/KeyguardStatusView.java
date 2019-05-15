@@ -1137,6 +1137,7 @@ public class KeyguardStatusView extends GridLayout implements
 
     private void updateTextClockAlign() {
         int paddingPixel = (int) getResources().getDimension(R.dimen.custom_clock_left_padding);
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mWeatherView.getLayoutParams();
         switch(mTextClockAlign) {
             case 0:
             default:
@@ -1147,6 +1148,11 @@ public class KeyguardStatusView extends GridLayout implements
                 mTextClockV0.setAlign();
                 mTextClockV1.setAlign();
                 mTextClockV2.setAlign();
+                lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_END);
+                lp.addRule(RelativeLayout.ALIGN_PARENT_START);                
+                mWeatherView.setLayoutParams(lp);          
+                mKeyguardSlice.setRowGravity(Gravity.START, paddingPixel);
                 break;
 
             case 1:
@@ -1157,6 +1163,12 @@ public class KeyguardStatusView extends GridLayout implements
                 mTextClockV0.setAlign();
                 mTextClockV1.setAlign();
                 mTextClockV2.setAlign();
+                mTextClockV2.setAlign();         
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_START);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_END);       
+                lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                mWeatherView.setLayoutParams(lp);                
+                mKeyguardSlice.setRowGravity(Gravity.CENTER, 0);
                 break;
 
             case 2:
@@ -1167,6 +1179,11 @@ public class KeyguardStatusView extends GridLayout implements
                 mTextClockV0.setAlign();
                 mTextClockV1.setAlign();
                 mTextClockV2.setAlign();
+                lp.removeRule(RelativeLayout.CENTER_HORIZONTAL);
+                lp.removeRule(RelativeLayout.ALIGN_PARENT_START); 
+                lp.addRule(RelativeLayout.ALIGN_PARENT_END);
+                mWeatherView.setLayoutParams(lp);
+                mKeyguardSlice.setRowGravity(Gravity.END, paddingPixel);
                 break;
         }
     }
@@ -1708,6 +1725,15 @@ public class KeyguardStatusView extends GridLayout implements
     private void setStyle() {
     RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)
         mKeyguardSlice.getLayoutParams();
+        int paddingPixel = (int) getResources().getDimension(R.dimen.custom_clock_left_padding);
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) mWeatherView.getLayoutParams(); 
+        lp.removeRule(RelativeLayout.ALIGN_PARENT_START);
+        lp.removeRule(RelativeLayout.ALIGN_PARENT_END);       
+        lp.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        lp.setMargins(paddingPixel, lp.topMargin, paddingPixel, lp.bottomMargin);
+        mWeatherView.setLayoutParams(lp);                
+        mKeyguardSlice.setRowGravity(Gravity.CENTER, 0);
+
         switch (mClockSelection) {
             case 0: // default digital
             default:
