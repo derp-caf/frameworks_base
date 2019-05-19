@@ -232,4 +232,6 @@ oneway interface IStatusBar
      * Derp-CAF
      */
     void toggleCameraFlash();
+    void toggleCameraFlashState(boolean enable);
+
 }
