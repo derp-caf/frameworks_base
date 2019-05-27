@@ -403,6 +403,15 @@ public class StatusBar extends SystemUI implements DemoMode,
         "com.android.system.switch.stock", // 0
         "com.android.system.switch.md2", // 1
         "com.android.system.switch.oneplus", // 2
+	"com.android.system.switch.one", // 3
+        "com.android.system.switch.two", // 4
+        "com.android.system.switch.three", // 5
+        "com.android.system.switch.four", // 6
+        "com.android.system.switch.five", // 7
+        "com.android.system.switch.six", // 8
+        "com.android.system.switch.seven", // 9
+        "com.android.system.switch.eight", // 10
+        "com.android.system.switch.nine", // 11
     };
 
     /** If true, the system is in the half-boot-to-decryption-screen state.
