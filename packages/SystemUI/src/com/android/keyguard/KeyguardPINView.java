@@ -48,7 +48,6 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
     private ViewGroup mRow1;
     private ViewGroup mRow2;
     private ViewGroup mRow3;
-    private View mDivider;
     private int mDisappearYTranslation;
     private View[][] mViews;
     private final KeyguardUpdateMonitor mKeyguardUpdateMonitor;
@@ -97,7 +96,6 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
         mRow1 = findViewById(R.id.row1);
         mRow2 = findViewById(R.id.row2);
         mRow3 = findViewById(R.id.row3);
-        mDivider = findViewById(R.id.divider);
         mViews = new View[][]{
                 new View[]{
                         mRow0, null, null
@@ -115,7 +113,8 @@ public class KeyguardPINView extends KeyguardPinBasedInputView {
                         findViewById(R.id.key9)
                 },
                 new View[]{
-                        null, findViewById(R.id.key0), findViewById(R.id.key_enter)
+                        findViewById(R.id.deleteOrCancel), findViewById(R.id.key0),
+                        findViewById(R.id.key_enter)
                 },
                 new View[]{
                         null, mEcaView, null

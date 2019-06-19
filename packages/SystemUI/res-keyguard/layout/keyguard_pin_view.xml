@@ -57,31 +57,6 @@
                     android:textColor="?attr/wallpaperTextColor"
                     android:contentDescription="@string/keyguard_accessibility_pin_area"
                     />
-            <ImageButton
-                    android:id="@+id/delete_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:src="@drawable/ic_backspace_black_24dp"
-                    android:clickable="true"
-                    android:paddingTop="8dip"
-                    android:paddingBottom="8dip"
-                    android:paddingRight="0dp"
-                    android:paddingLeft="0dp"
-                    android:background="@drawable/ripple_drawable"
-                    android:contentDescription="@string/keyboardview_keycode_delete"
-                    android:layout_alignEnd="@+id/pinEntry"
-                    android:layout_alignParentRight="true"
-                    android:tint="@color/pin_delete_color"
-                    android:tintMode="src_in"
-                    />
-            <View
-                    android:id="@+id/divider"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_alignParentBottom="true"
-                    android:background="@drawable/pin_divider"
-                    />
         </com.android.keyguard.AlphaOptimizedRelativeLayout>
         <LinearLayout
                 android:id="@+id/row1"
@@ -186,11 +161,18 @@
                 android:layout_weight="1"
                 android:orientation="horizontal"
                 >
-            <Space
+            <TextView
+                    android:id="@+id/deleteOrCancel"
                     android:layout_width="0px"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
+                    android:gravity="center"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/wallpaperTextColor"
+                    android:textSize="44.6px"
+                    android:background="@drawable/ripple_drawable"
                     />
+
             <com.android.keyguard.NumPadKey
                     android:id="@+id/key0"
                     android:layout_width="0px"

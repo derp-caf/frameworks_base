@@ -22,6 +22,7 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -33,7 +34,7 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
 
     protected PasswordTextView mPasswordEntry;
     private View mOkButton;
-    private View mDeleteButton;
+    private TextView mDeleteButton;
     private View mButton0;
     private View mButton1;
     private View mButton2;
@@ -205,7 +206,8 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
             mOkButton.setOnHoverListener(new LiftToActivateListener(getContext()));
         }
 
-        mDeleteButton = findViewById(R.id.delete_button);
+        mDeleteButton = (TextView) findViewById(R.id.deleteOrCancel);
+        mDeleteButton.setText(getContext().getResources().getString(R.string.keyboardview_keycode_delete));
         mDeleteButton.setVisibility(View.VISIBLE);
         mDeleteButton.setOnTouchListener(this);
         mDeleteButton.setOnClickListener(new OnClickListener() {
