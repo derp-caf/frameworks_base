@@ -444,12 +444,4 @@ public class RecentsTaskLoader {
         writer.print(prefix); writer.println("Temp Thumbnail Cache");
         mTempCache.dump(innerPrefix, writer);
     }
-
-    public void evictAllCaches() {
-        mIconCache.evictAll();
-        mActivityInfoCache.evictAll();
-        mActivityLabelCache.evictAll();
-        mContentDescriptionCache.evictAll();
-        mThumbnailCache.evictAll();
-    }
 }
