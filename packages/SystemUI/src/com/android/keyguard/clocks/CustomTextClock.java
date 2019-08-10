@@ -42,12 +42,22 @@ import android.text.format.DateUtils;
 import android.text.format.DateFormat;
 import android.text.format.Time;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.TextView;
 import android.provider.Settings;
+import android.app.WallpaperManager;
+import android.graphics.Color;
+import android.app.WallpaperColors;
+import android.support.v7.graphics.Palette;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import java.lang.NullPointerException;
+import java.lang.IllegalStateException;
+import android.graphics.Paint;
+import android.os.ParcelFileDescriptor;
+import android.graphics.BitmapFactory;
 
 import com.android.internal.util.ArrayUtils;
-
 import com.android.keyguard.clocks.ColorText;
 import com.android.keyguard.clocks.LangGuard;
 
@@ -64,7 +74,6 @@ public class CustomTextClock extends TextView {
     private String[] langExceptions = getResources().getStringArray(R.array.langExceptions);
     private String curLang = Locale.getDefault().getLanguage();
     private boolean langHasChanged;
-    private boolean FixAlign = false;
     private String topText = getResources().getString(R.string.custom_text_clock_top_text_default);
     private String highNoonFirstRow = getResources().getString(R.string.high_noon_first_row);
     private String highNoonSecondRow = getResources().getString(R.string.high_noon_second_row);
@@ -158,10 +167,9 @@ public class CustomTextClock extends TextView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (handType == 2) {
-            if (langHasChanged || FixAlign) {
+            if (langHasChanged) {
                 setText(topText);
                 langHasChanged = false;
-                FixAlign = false;
             }
             setTextColor(ColorText.getWallColor(mContext));
         } else {
@@ -425,11 +433,6 @@ public class CustomTextClock extends TextView {
 	    updateClockColor();
 	    updateClockSize();
         }
-    }
-
-    public void setAlign() {
-         FixAlign = true;
-         onTimeChanged();
     }
 }
 

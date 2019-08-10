@@ -42,8 +42,6 @@ import android.util.Slog;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
 import android.widget.GridLayout;
 import android.widget.RelativeLayout;
 import android.widget.LinearLayout;
@@ -88,9 +86,9 @@ public class KeyguardStatusView extends GridLayout implements
     private CustomAnalogClock mDotClockView;
     private LinearLayout mTextClock;
     private TextClock mClockView;
-    private CustomTextClock mTextClockV0;
-    private CustomTextClock mTextClockV1;
-    private CustomTextClock mTextClockV2;
+    private TextView mTextClockV0;
+    private TextView mTextClockV1;
+    private TextView mTextClockV2;
     private View mClockSeparator;
     private TextView mOwnerInfo;
     private KeyguardSliceView mKeyguardSlice;
@@ -111,7 +109,6 @@ public class KeyguardStatusView extends GridLayout implements
     private boolean mShowClock;
     private boolean mShowInfo;
     private int mClockSelection;
-    private int mTextClockAlign;
 
     private boolean mWasLatestViewSmall;
 
@@ -1132,43 +1129,6 @@ public class KeyguardStatusView extends GridLayout implements
         mKeyguardSlice.setViewsTextSize(TypedValue.COMPLEX_UNIT_PX,
                 getResources().getDimensionPixelSize(R.dimen.lock_date_font_size_25));
 	}
-
-}
-
-    private void updateTextClockAlign() {
-        int paddingPixel = (int) getResources().getDimension(R.dimen.custom_clock_left_padding);
-        switch(mTextClockAlign) {
-            case 0:
-            default:
-                mTextClockV0.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                mTextClockV1.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                mTextClockV2.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                mTextClock.setPaddingRelative(paddingPixel , 0 , 0 , 0);
-                mTextClockV0.setAlign();
-                mTextClockV1.setAlign();
-                mTextClockV2.setAlign();
-                break;
-
-            case 1:
-                mTextClockV0.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                mTextClockV1.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                mTextClockV2.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                mTextClock.setPaddingRelative(0 , 0 , 0 , 0);
-                mTextClockV0.setAlign();
-                mTextClockV1.setAlign();
-                mTextClockV2.setAlign();
-                break;
-
-            case 2:
-                mTextClockV0.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
-                mTextClockV1.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
-                mTextClockV2.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
-                mTextClock.setPaddingRelative(0 , 0 , paddingPixel , 0);
-                mTextClockV0.setAlign();
-                mTextClockV1.setAlign();
-                mTextClockV2.setAlign();
-                break;
-        }
     }
 
     private void updateVisibilities() {
@@ -1699,8 +1659,6 @@ public class KeyguardStatusView extends GridLayout implements
                 Settings.System.LOCKSCREEN_INFO, 1, UserHandle.USER_CURRENT) == 1;
         mClockSelection = Settings.System.getIntForUser(resolver,
                 Settings.System.LOCKSCREEN_CLOCK_SELECTION, 0, UserHandle.USER_CURRENT);
-        mTextClockAlign = Settings.System.getIntForUser(resolver,
-                Settings.System.LOCKSCREEN_TEXT_CLOCK_ALIGN, 0, UserHandle.USER_CURRENT);
 
         setStyle();
     }
@@ -1771,7 +1729,6 @@ public class KeyguardStatusView extends GridLayout implements
 
 	    case 12: // custom Text Clock View
 		params.addRule(RelativeLayout.BELOW, R.id.custom_textclock_view);
-                updateTextClockAlign();
 		break;
         }
 
