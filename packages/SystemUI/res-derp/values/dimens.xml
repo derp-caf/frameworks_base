@@ -45,4 +45,10 @@
     <dimen name="opa_return_translation">-1.0dip</dimen>
     <dimen name="opa_rest_to_collapse">7.0dip</dimen>
 
+    <!-- Custom header -->
+    <dimen name="qs_header_image_offset">25dp</dimen>
+    <dimen name="qs_header_image_side_margin">4dp</dimen>
+    <dimen name="qs_header_image_top_margin">4dp</dimen>
+    <dimen name="qs_header_image_bottom_margin">4dp</dimen>
+
 </resources>
