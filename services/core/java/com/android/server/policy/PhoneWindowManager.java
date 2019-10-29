@@ -1633,7 +1633,9 @@ private boolean isDozeMode() {
 
         @Override
         public void run() {
-            mDefaultDisplayPolicy.takeScreenshot(mScreenshotType, mScreenshotSource);
+            if (!mPocketLockShowing) {
+                mDefaultDisplayPolicy.takeScreenshot(mScreenshotType, mScreenshotSource);
+            }
         }
     }
 
@@ -2008,8 +2010,10 @@ private boolean isDozeMode() {
         mSwipeToScreenshot = new SwipeToScreenshotListener(context, new SwipeToScreenshotListener.Callbacks() {
             @Override
             public void onSwipeThreeFinger() {
+                if (!mPocketLockShowing) {
                     DerpUtils.takeScreenshot(true);
                 }
+            }
         });
 
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
@@ -5228,12 +5232,18 @@ private boolean isDozeMode() {
             return;
         }
 
+        if (mPowerManager.isInteractive() && !isKeyguardShowingAndNotOccluded()){
+            return;
+        }
+
         if (DEBUG) {
             Log.d(TAG, "showPocketLock, animate=" + animate);
         }
 
         mPocketLock.show(animate);
         mPocketLockShowing = true;
+
+        mPocketManager.setPocketLockVisible(true);
     }
 
     /**
@@ -5255,6 +5265,8 @@ private boolean isDozeMode() {
 
         mPocketLock.hide(animate);
         mPocketLockShowing = false;
+
+        mPocketManager.setPocketLockVisible(false);
     }
 
     private void handleHideBootMessage() {
