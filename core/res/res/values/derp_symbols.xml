@@ -16,5 +16,8 @@
   <!-- Emergency button in power menu -->
   <java-symbol type="bool" name="config_showEmergencyButtonInPowerMenu" />
 
+    <!-- Whether to show WiFi/Hotspot generation number -->
+    <java-symbol type="bool" name="config_show_network_generation" />
+
 </resources>
 
