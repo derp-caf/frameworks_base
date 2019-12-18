@@ -7417,5 +7417,12 @@ message MetricsEvent {
     // ---- End Q Constants, all Q constants go above this line ----
     // Add new aosp constants above this line.
     // END OF AOSP CONSTANTS
+
+    // Beginning of Custom Constants
+    //Derp Metrics
+    DERP = 1800;
+
+    DERPZONE = 2000;
+
   }
 }
