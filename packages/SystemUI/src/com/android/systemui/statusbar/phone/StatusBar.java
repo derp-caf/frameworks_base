@@ -62,6 +62,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -647,16 +648,23 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
 
         void observe() {
-            mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(
+            ContentResolver resolver = mContext.getContentResolver();
+            resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.DOUBLE_TAP_SLEEP_GESTURE),
                     false, this, UserHandle.USER_ALL);
-            mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(
+            resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.DOUBLE_TAP_SLEEP_LOCKSCREEN),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_CLOCK_SELECTION),
                     false, this, UserHandle.USER_ALL);
         }
 
         @Override
-        public void onChange(boolean selfChange) {
+        public void onChange(boolean selfChange, Uri uri) {
+            if (uri.equals(Settings.Secure.getUriFor(Settings.Secure.LOCKSCREEN_CLOCK_SELECTION))) {
+                updateKeyguardStatusSettings();
+            }
             update();
         }
 
@@ -664,6 +672,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             if (mNotificationShadeWindowViewController != null) {
                 mNotificationShadeWindowViewController.updateSettings();
             }
+            updateKeyguardStatusSettings();
         }
     }
 
@@ -3889,6 +3898,10 @@ public class StatusBar extends SystemUI implements DemoMode,
             updateIsKeyguard();
         }
     };
+
+    private void updateKeyguardStatusSettings() {
+        mNotificationPanelViewController.updateKeyguardStatusSettings();
+    }
 
     public int getWakefulnessState() {
         return mWakefulnessLifecycle.getWakefulness();
