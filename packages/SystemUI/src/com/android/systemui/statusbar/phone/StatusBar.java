@@ -4043,6 +4043,13 @@ public class StatusBar extends SystemUI implements DemoMode,
     }
 
     @Override
+    public void setBlockedGesturalNavigation(boolean blocked) {
+        if (getNavigationBarView() != null) {
+            getNavigationBarView().setBlockedGesturalNavigation(blocked);
+        }
+    }
+
+    @Override
     public void showScreenPinningRequest(int taskId) {
         if (mKeyguardStateController.isShowing()) {
             // Don't allow apps to trigger this from keyguard.
