@@ -14,6 +14,8 @@ public class AccentUtils {
             Arrays.asList("accent_device_default",
                     "accent_device_default_light",
                     "accent_device_default_dark",
+                    "material_pixel_blue_dark",
+                    "material_pixel_blue_bright",
                     "gradient_start"));
 
     private static final String ACCENT_COLOR_PROP = "persist.sys.theme.accentcolor";
