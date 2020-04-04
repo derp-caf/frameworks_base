@@ -111,6 +111,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
     private static final int MESSAGE_DISABLE = 2;
     private static final int MESSAGE_REGISTER_ADAPTER = 20;
     private static final int MESSAGE_UNREGISTER_ADAPTER = 21;
+    private static final int MESSAGE_INFORM_ADAPTER_SERVICE_UP = 22;
     private static final int MESSAGE_REGISTER_STATE_CHANGE_CALLBACK = 30;
     private static final int MESSAGE_UNREGISTER_STATE_CHANGE_CALLBACK = 31;
     private static final int MESSAGE_BLUETOOTH_SERVICE_CONNECTED = 40;
@@ -302,7 +303,6 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                                         mContext.getPackageName(), false);
                                 mBluetooth.onBrEdrDown();
                                 mEnable = false;
-                                mEnableExternal = false;
                             }
                         } catch (RemoteException e) {
                             Slog.e(TAG, "Unable to call onBrEdrDown", e);
@@ -810,7 +810,6 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                 if (!mEnableExternal || (st == BluetoothAdapter.STATE_BLE_ON)) {
                     if (DBG) Slog.d(TAG, "Move to BT state OFF");
                     sendBrEdrDownCallback();
-                    mEnableExternal = false;
                 }
             } catch (RemoteException e) {
                 Slog.e(TAG, "", e);
@@ -859,7 +858,6 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
 
                 mBluetooth.onBrEdrDown();
                 mEnable = false;
-                mEnableExternal = false;
             } else if (isBluetoothPersistedStateOnBluetooth() ||
                  mEnableExternal) {
                 // This triggers transition to STATE_ON
@@ -1532,6 +1530,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
      */
     private void sendBluetoothServiceUpCallback() {
         try {
+            mBluetoothLock.writeLock().lock();
             int n = mCallbacks.beginBroadcast();
             Slog.d(TAG, "Broadcasting onBluetoothServiceUp() to " + n + " receivers.");
             for (int i = 0; i < n; i++) {
@@ -1543,6 +1542,7 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
             }
         } finally {
             mCallbacks.finishBroadcast();
+            mBluetoothLock.writeLock().unlock();
         }
     }
 
@@ -1867,13 +1867,20 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                     break;
 
                 case MESSAGE_REGISTER_ADAPTER: {
+                    if (DBG) Slog.d(TAG,"MESSAGE_REGISTER_ADAPTER");
                     IBluetoothManagerCallback callback = (IBluetoothManagerCallback) msg.obj;
                     mCallbacks.register(callback);
                     break;
                 }
                 case MESSAGE_UNREGISTER_ADAPTER: {
+                    if (DBG) Slog.d(TAG,"MESSAGE_UNREGISTER_ADAPTER");
                     IBluetoothManagerCallback callback = (IBluetoothManagerCallback) msg.obj;
                     mCallbacks.unregister(callback);
+                    break;
+                }
+                case MESSAGE_INFORM_ADAPTER_SERVICE_UP: {
+                    if (DBG) Slog.d(TAG,"MESSAGE_INFORM_ADAPTER_SERVICE_UP");
+                    sendBluetoothServiceUpCallback();
                     break;
                 }
                 case MESSAGE_REGISTER_STATE_CHANGE_CALLBACK: {
@@ -1944,7 +1951,9 @@ class BluetoothManagerService extends IBluetoothManager.Stub {
                             Slog.e(TAG, "Unable to register BluetoothCallback", re);
                         }
                         //Inform BluetoothAdapter instances that service is up
-                        sendBluetoothServiceUpCallback();
+                        Message informMsg =
+                                    mHandler.obtainMessage(MESSAGE_INFORM_ADAPTER_SERVICE_UP);
+                        mHandler.sendMessage(informMsg);
 
                         //Do enable request
                         try {

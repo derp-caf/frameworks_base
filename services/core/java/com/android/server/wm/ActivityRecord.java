@@ -931,8 +931,9 @@ public final class ActivityRecord extends ConfigurationContainer {
         return ResolverActivity.class.getName().equals(className);
     }
 
-    boolean isResolverActivity() {
-        return isResolverActivity(mActivityComponent.getClassName());
+    boolean isResolverOrDelegateActivity() {
+        return isResolverActivity(mActivityComponent.getClassName()) || Objects.equals(
+                mActivityComponent, mAtmService.mStackSupervisor.getSystemChooserActivity());
     }
 
     boolean isResolverOrChildActivity() {
@@ -1264,7 +1265,8 @@ public final class ActivityRecord extends ConfigurationContainer {
                 && intent.getType() == null;
     }
 
-    private boolean canLaunchHomeActivity(int uid, ActivityRecord sourceRecord) {
+    @VisibleForTesting
+    boolean canLaunchHomeActivity(int uid, ActivityRecord sourceRecord) {
         if (uid == Process.myUid() || uid == 0) {
             // System process can launch home activity.
             return true;
@@ -1274,8 +1276,8 @@ public final class ActivityRecord extends ConfigurationContainer {
         if (recentTasks != null && recentTasks.isCallerRecents(uid)) {
             return true;
         }
-        // Resolver activity can launch home activity.
-        return sourceRecord != null && sourceRecord.isResolverActivity();
+        // Resolver or system chooser activity can launch home activity.
+        return sourceRecord != null && sourceRecord.isResolverOrDelegateActivity();
     }
 
     /**
@@ -1294,7 +1296,7 @@ public final class ActivityRecord extends ConfigurationContainer {
             ActivityOptions options, ActivityRecord sourceRecord) {
         int activityType = ACTIVITY_TYPE_UNDEFINED;
         if ((!componentSpecified || canLaunchHomeActivity(launchedFromUid, sourceRecord))
-                && isHomeIntent(intent) && !isResolverActivity()) {
+                && isHomeIntent(intent) && !isResolverOrDelegateActivity()) {
             // This sure looks like a home activity!
             activityType = ACTIVITY_TYPE_HOME;
 
@@ -3195,7 +3197,7 @@ public final class ActivityRecord extends ConfigurationContainer {
 
     boolean ensureActivityConfiguration(int globalChanges, boolean preserveWindow) {
         return ensureActivityConfiguration(globalChanges, preserveWindow,
-                false /* ignoreStopState */);
+                false /* ignoreVisibility */);
     }
 
     /**
@@ -3205,15 +3207,15 @@ public final class ActivityRecord extends ConfigurationContainer {
      * @param globalChanges The changes to the global configuration.
      * @param preserveWindow If the activity window should be preserved on screen if the activity
      *                       is relaunched.
-     * @param ignoreStopState If we should try to relaunch the activity even if it is in the stopped
-     *                        state. This is useful for the case where we know the activity will be
-     *                        visible soon and we want to ensure its configuration before we make it
-     *                        visible.
+     * @param ignoreVisibility If we should try to relaunch the activity even if it is invisible
+     *                         (stopped state). This is useful for the case where we know the
+     *                         activity will be visible soon and we want to ensure its configuration
+     *                         before we make it visible.
      * @return False if the activity was relaunched and true if it wasn't relaunched because we
      *         can't or the app handles the specific configuration that is changing.
      */
     boolean ensureActivityConfiguration(int globalChanges, boolean preserveWindow,
-            boolean ignoreStopState) {
+            boolean ignoreVisibility) {
         final ActivityStack stack = getActivityStack();
         if (stack.mConfigWillChange) {
             if (DEBUG_SWITCH || DEBUG_CONFIGURATION) Slog.v(TAG_CONFIGURATION,
@@ -3229,15 +3231,9 @@ public final class ActivityRecord extends ConfigurationContainer {
             return true;
         }
 
-        if (!ignoreStopState && (mState == STOPPING || mState == STOPPED)) {
+        if (!ignoreVisibility && (mState == STOPPING || mState == STOPPED || !shouldBeVisible())) {
             if (DEBUG_SWITCH || DEBUG_CONFIGURATION) Slog.v(TAG_CONFIGURATION,
-                    "Skipping config check stopped or stopping: " + this);
-            return true;
-        }
-
-        if (!shouldBeVisible()) {
-            if (DEBUG_SWITCH || DEBUG_CONFIGURATION) Slog.v(TAG_CONFIGURATION,
-                    "Skipping config check invisible stack: " + this);
+                    "Skipping config check invisible: " + this);
             return true;
         }
 

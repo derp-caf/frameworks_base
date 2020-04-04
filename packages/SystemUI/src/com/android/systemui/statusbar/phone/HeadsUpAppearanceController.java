@@ -16,8 +16,8 @@
 
 package com.android.systemui.statusbar.phone;
 
-import android.content.ContentResolver;
-import android.content.Context;
+import static com.android.systemui.SysUiServiceProvider.getComponent;
+
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.view.DisplayCutout;
@@ -31,11 +31,17 @@ import com.android.internal.widget.ViewClippingUtil;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
 import com.android.systemui.plugins.DarkIconDispatcher;
+import com.android.systemui.plugins.statusbar.StatusBarStateController;
+import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.CrossFadeHelper;
 import com.android.systemui.statusbar.HeadsUpStatusBarView;
+import com.android.systemui.statusbar.StatusBarState;
+import com.android.systemui.statusbar.SysuiStatusBarStateController;
+import com.android.systemui.statusbar.notification.NotificationWakeUpCoordinator;
 import com.android.systemui.statusbar.notification.collection.NotificationEntry;
 import com.android.systemui.statusbar.notification.row.ExpandableNotificationRow;
 import com.android.systemui.statusbar.notification.stack.NotificationStackScrollLayout;
+import com.android.systemui.statusbar.policy.KeyguardMonitor;
 import com.android.systemui.statusbar.policy.OnHeadsUpChangedListener;
 
 import java.util.function.BiConsumer;
@@ -45,7 +51,7 @@ import java.util.function.Consumer;
  * Controls the appearance of heads up notifications in the icon area and the header itself.
  */
 public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
-        DarkIconDispatcher.DarkReceiver {
+        DarkIconDispatcher.DarkReceiver, NotificationWakeUpCoordinator.WakeUpListener {
     public static final int CONTENT_FADE_DURATION = 110;
     public static final int CONTENT_FADE_DELAY = 100;
     private final NotificationIconAreaController mNotificationIconAreaController;
@@ -60,13 +66,17 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
     private final Consumer<ExpandableNotificationRow>
             mSetTrackingHeadsUp = this::setTrackingHeadsUp;
     private final Runnable mUpdatePanelTranslation = this::updatePanelTranslation;
-    private final BiConsumer<Float, Float> mSetExpandedHeight = this::setExpandedHeight;
+    private final BiConsumer<Float, Float> mSetExpandedHeight = this::setAppearFraction;
+    private final KeyguardBypassController mBypassController;
+    private final StatusBarStateController mStatusBarStateController;
+    private final CommandQueue mCommandQueue;
+    private final NotificationWakeUpCoordinator mWakeUpCoordinator;
     @VisibleForTesting
     float mExpandedHeight;
     @VisibleForTesting
     boolean mIsExpanded;
     @VisibleForTesting
-    float mExpandFraction;
+    float mAppearFraction;
     private ExpandableNotificationRow mTrackedChild;
     private boolean mShown;
     private final View.OnLayoutChangeListener mStackScrollLayoutChangeListener =
@@ -81,13 +91,18 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
             };
     private boolean mAnimationsEnabled = true;
     Point mPoint;
+    private KeyguardMonitor mKeyguardMonitor;
 
 
     public HeadsUpAppearanceController(
             NotificationIconAreaController notificationIconAreaController,
             HeadsUpManagerPhone headsUpManager,
-            View statusbarView) {
-        this(notificationIconAreaController, headsUpManager,
+            View statusbarView,
+            SysuiStatusBarStateController statusBarStateController,
+            KeyguardBypassController keyguardBypassController,
+            NotificationWakeUpCoordinator wakeUpCoordinator) {
+        this(notificationIconAreaController, headsUpManager, statusBarStateController,
+                keyguardBypassController, wakeUpCoordinator,
                 statusbarView.findViewById(R.id.heads_up_status_bar_view),
                 statusbarView.findViewById(R.id.notification_stack_scroller),
                 statusbarView.findViewById(R.id.notification_panel),
@@ -100,6 +115,9 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
     public HeadsUpAppearanceController(
             NotificationIconAreaController notificationIconAreaController,
             HeadsUpManagerPhone headsUpManager,
+            StatusBarStateController stateController,
+            KeyguardBypassController bypassController,
+            NotificationWakeUpCoordinator wakeUpCoordinator,
             HeadsUpStatusBarView headsUpStatusBarView,
             NotificationStackScrollLayout stackScroller,
             NotificationPanelView panelView,
@@ -118,7 +136,7 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         panelView.addTrackingHeadsUpListener(mSetTrackingHeadsUp);
         panelView.addVerticalTranslationListener(mUpdatePanelTranslation);
         panelView.setHeadsUpAppearanceController(this);
-        mStackScroller.addOnExpandedHeightListener(mSetExpandedHeight);
+        mStackScroller.addOnExpandedHeightChangedListener(mSetExpandedHeight);
         mStackScroller.addOnLayoutChangeListener(mStackScrollLayoutChangeListener);
         mStackScroller.setHeadsUpAppearanceController(this);
         mClockView = clockView;
@@ -139,16 +157,23 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
                 mHeadsUpStatusBarView.removeOnLayoutChangeListener(this);
             }
         });
+        mBypassController = bypassController;
+        mStatusBarStateController = stateController;
+        mWakeUpCoordinator = wakeUpCoordinator;
+        wakeUpCoordinator.addListener(this);
+        mCommandQueue = getComponent(headsUpStatusBarView.getContext(), CommandQueue.class);
+        mKeyguardMonitor = Dependency.get(KeyguardMonitor.class);
     }
 
 
     public void destroy() {
         mHeadsUpManager.removeListener(this);
         mHeadsUpStatusBarView.setOnDrawingRectChangedListener(null);
+        mWakeUpCoordinator.removeListener(this);
         mPanelView.removeTrackingHeadsUpListener(mSetTrackingHeadsUp);
         mPanelView.removeVerticalTranslationListener(mUpdatePanelTranslation);
         mPanelView.setHeadsUpAppearanceController(null);
-        mStackScroller.removeOnExpandedHeightListener(mSetExpandedHeight);
+        mStackScroller.removeOnExpandedHeightChangedListener(mSetExpandedHeight);
         mStackScroller.removeOnLayoutChangeListener(mStackScrollLayoutChangeListener);
         mDarkIconDispatcher.removeDarkReceiver(this);
     }
@@ -223,7 +248,7 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
 
     private void updateTopEntry() {
         NotificationEntry newEntry = null;
-        if (!mIsExpanded && mHeadsUpManager.hasPinnedHeadsUp()) {
+        if (shouldBeVisible()) {
             newEntry = mHeadsUpManager.getTopEntry();
         }
         NotificationEntry previousEntry = mHeadsUpStatusBarView.getShowingEntry();
@@ -281,6 +306,11 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
                 hide(mHeadsUpStatusBarView, View.GONE, () -> {
                     updateParentClipping(true /* shouldClip */);
                 });
+            }
+            // Show the status bar icons when the view gets shown / hidden
+            if (mStatusBarStateController.getState() != StatusBarState.SHADE) {
+                mCommandQueue.recomputeDisableFlags(
+                        mHeadsUpStatusBarView.getContext().getDisplayId(), false);
             }
         }
     }
@@ -355,7 +385,15 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
      * @return if the heads up status bar view should be shown
      */
     public boolean shouldBeVisible() {
-        return !mIsExpanded && mHeadsUpManager.hasPinnedHeadsUp();
+        boolean notificationsShown = !mWakeUpCoordinator.getNotificationsFullyHidden();
+        boolean canShow = !mIsExpanded && notificationsShown;
+        if (mBypassController.getBypassEnabled() &&
+                (mStatusBarStateController.getState() == StatusBarState.KEYGUARD
+                        || mKeyguardMonitor.isKeyguardGoingAway())
+                && notificationsShown) {
+            canShow = true;
+        }
+        return canShow && mHeadsUpManager.hasPinnedHeadsUp();
     }
 
     @Override
@@ -364,12 +402,15 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         updateHeader(entry);
     }
 
-    public void setExpandedHeight(float expandedHeight, float appearFraction) {
-        boolean changedHeight = expandedHeight != mExpandedHeight;
+    public void setAppearFraction(float expandedHeight, float appearFraction) {
+        boolean changed = expandedHeight != mExpandedHeight;
         mExpandedHeight = expandedHeight;
-        mExpandFraction = appearFraction;
+        mAppearFraction = appearFraction;
         boolean isExpanded = expandedHeight > 0;
-        if (changedHeight) {
+        // We only notify if the expandedHeight changed and not on the appearFraction, since
+        // otherwise we may run into an infinite loop where the panel and this are constantly
+        // updating themselves over just a small fraction
+        if (changed) {
             updateHeadsUpHeaders();
         }
         if (isExpanded != mIsExpanded) {
@@ -402,8 +443,9 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
     public void updateHeader(NotificationEntry entry) {
         ExpandableNotificationRow row = entry.getRow();
         float headerVisibleAmount = 1.0f;
-        if (row.isPinned() || row.isHeadsUpAnimatingAway() || row == mTrackedChild) {
-            headerVisibleAmount = mExpandFraction;
+        if (row.isPinned() || row.isHeadsUpAnimatingAway() || row == mTrackedChild
+                || row.showingPulsing()) {
+            headerVisibleAmount = mAppearFraction;
         }
         row.setHeaderVisibleAmount(headerVisibleAmount);
     }
@@ -413,8 +455,7 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
         mHeadsUpStatusBarView.onDarkChanged(area, darkIntensity, tint);
     }
 
-    public void setPublicMode(boolean publicMode) {
-        mHeadsUpStatusBarView.setPublicMode(publicMode);
+    public void onStateChanged() {
         updateTopEntry();
     }
 
@@ -423,7 +464,12 @@ public class HeadsUpAppearanceController implements OnHeadsUpChangedListener,
             mTrackedChild = oldController.mTrackedChild;
             mExpandedHeight = oldController.mExpandedHeight;
             mIsExpanded = oldController.mIsExpanded;
-            mExpandFraction = oldController.mExpandFraction;
+            mAppearFraction = oldController.mAppearFraction;
         }
+    }
+
+    @Override
+    public void onFullyHiddenChanged(boolean isFullyHidden) {
+        updateTopEntry();
     }
 }

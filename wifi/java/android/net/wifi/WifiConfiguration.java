@@ -779,6 +779,12 @@ public class WifiConfiguration implements Parcelable {
      */
     public int userApproved = USER_UNSPECIFIED;
 
+    /**
+     * @hide
+     * Last WPA2 fallback connection attempted timestamp
+     */
+    public long lastWpa2FallbackAttemptTime = -1L;
+
     /** The Below RSSI thresholds are used to configure AutoJoin
      *  - GOOD/LOW/BAD thresholds are used so as to calculate link score
      *  - UNWANTED_SOFT are used by the blacklisting logic so as to handle
@@ -839,6 +845,13 @@ public class WifiConfiguration implements Parcelable {
      * Iface name for OWE transition mode
      */
     public String oweTransIfaceName;
+
+    /**
+     * @hide
+     * network ID of linked saved wifi configuration. it is applicable only to
+     * ephemeral networks matching with saved networks.
+     */
+    public int linkedNetworkId;
 
     /**
      * @hide
@@ -1165,6 +1178,14 @@ public class WifiConfiguration implements Parcelable {
      * DPP C-Sign key (Configurator public key).
      */
     public String dppCsign;
+
+    /**
+     * @hide
+     * Wifi Identity to identify on which interface this configuration is allowed.
+     * it should take one of WifiManager.STA_SHARED/STA_PRIMARY/STA_SECONDARY.
+     * default value: WifiManager.STA_SHARED.
+     */
+    public int staId;
 
     /** @hide
      * Boost given to RSSI on a home network for the purpose of calculating the score
@@ -1879,6 +1900,8 @@ public class WifiConfiguration implements Parcelable {
         dppNetAccessKeyExpiry = -1;
         dppCsign = null;
         oweTransIfaceName = null;
+        staId = WifiManager.STA_SHARED;
+        linkedNetworkId = INVALID_NETWORK_ID;
     }
 
     /**
@@ -1935,6 +1958,7 @@ public class WifiConfiguration implements Parcelable {
                 .append(" HIDDEN: ").append(this.hiddenSSID)
                 .append(" PMF: ").append(this.requirePMF)
                 .append(" OWE Transition mode Iface: ").append(this.oweTransIfaceName)
+                .append(" linked network ID: ").append(this.linkedNetworkId)
                 .append('\n');
 
 
@@ -2141,6 +2165,7 @@ public class WifiConfiguration implements Parcelable {
 
         sbuf.append("ShareThisAp: ").append(this.shareThisAp);
         sbuf.append('\n');
+        sbuf.append("wifi id: ").append(this.staId).append("\n");
         return sbuf.toString();
     }
 
@@ -2543,6 +2568,9 @@ public class WifiConfiguration implements Parcelable {
             requirePMF = source.requirePMF;
             updateIdentifier = source.updateIdentifier;
             oweTransIfaceName = source.oweTransIfaceName;
+            staId = source.staId;
+            lastWpa2FallbackAttemptTime = source.lastWpa2FallbackAttemptTime;
+            linkedNetworkId = source.linkedNetworkId;
         }
     }
 
@@ -2620,6 +2648,9 @@ public class WifiConfiguration implements Parcelable {
         dest.writeInt(macRandomizationSetting);
         dest.writeInt(osu ? 1 : 0);
         dest.writeString(oweTransIfaceName);
+        dest.writeInt(staId);
+        dest.writeLong(lastWpa2FallbackAttemptTime);
+        dest.writeInt(linkedNetworkId);
     }
 
     /** Implement the Parcelable interface {@hide} */
@@ -2699,6 +2730,9 @@ public class WifiConfiguration implements Parcelable {
                 config.macRandomizationSetting = in.readInt();
                 config.osu = in.readInt() != 0;
                 config.oweTransIfaceName = in.readString();
+                config.staId = in.readInt();
+                config.lastWpa2FallbackAttemptTime = in.readLong();
+                config.linkedNetworkId = in.readInt();
                 return config;
             }
 

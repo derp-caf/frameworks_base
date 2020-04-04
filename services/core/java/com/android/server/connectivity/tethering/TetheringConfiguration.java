@@ -119,7 +119,7 @@ public class TetheringConfiguration {
         }
         tetherableBluetoothRegexs = getResourceStringArray(res, config_tether_bluetooth_regexs);
 
-        isDunRequired = checkDunRequired(ctx);
+        isDunRequired = checkDunRequired(ctx, subId);
 
         chooseUpstreamAutomatically = getResourceBoolean(res, config_tether_upstream_automatic);
         preferredUpstreamIfaceTypes = getUpstreamIfaceTypes(res, isDunRequired);
@@ -243,14 +243,14 @@ public class TetheringConfiguration {
     }
 
     /** Check whether dun is required. */
-    public static boolean checkDunRequired(Context ctx) {
+    public static boolean checkDunRequired(Context ctx, int id) {
         // Allow override via prop
         final int dunProp = SystemProperties.getInt("persist.sys.dun.override", -1);
         if (dunProp >= 0) {
             return dunProp > 0;
         }
         final TelephonyManager tm = (TelephonyManager) ctx.getSystemService(TELEPHONY_SERVICE);
-        return (tm != null) ? tm.getTetherApnRequired() : false;
+        return (tm != null) ? tm.getTetherApnRequired(id) : false;
     }
 
     private static Collection<Integer> getUpstreamIfaceTypes(Resources res, boolean dunRequired) {
