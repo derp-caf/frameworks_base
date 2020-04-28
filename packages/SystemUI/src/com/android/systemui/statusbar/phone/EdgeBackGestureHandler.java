@@ -62,6 +62,7 @@ import android.view.WindowManager;
 import android.view.WindowManagerGlobal;
 
 import com.android.internal.util.hwkeys.ActionUtils;
+import com.android.internal.util.hwkeys.ActionHandler;
 import com.android.internal.util.derp.DerpUtils;
 import com.android.internal.config.sysui.SystemUiDeviceConfigFlags;
 import com.android.internal.policy.GestureNavigationSettingsObserver;
@@ -762,6 +763,9 @@ public class EdgeBackGestureHandler extends CurrentUserTracker implements Displa
                 break;
             case 13: // Kill app
                 DerpUtils.killForegroundApp();
+                break;
+            case 14: // Switch recent app
+                ActionUtils.switchToLastApp(mContext);
                 break;
         }
     }
