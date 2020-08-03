@@ -216,6 +216,8 @@ public final class OomAdjuster {
     // Process in same process Group keep in same cgroup
     boolean mEnableProcessGroupCgroupFollow = false;
     boolean mProcessGroupCgroupFollowDex2oatOnly = false;
+    // Enable hooks for background apps transition
+    boolean mEnableBgt = false;
 
     public static BoostFramework mPerf = new BoostFramework();
 
@@ -265,6 +267,7 @@ public final class OomAdjuster {
             mEnableProcessGroupCgroupFollow = Boolean.parseBoolean(mPerf.perfGetProp("ro.vendor.qti.cgroup_follow.enable", "false"));
             mProcessGroupCgroupFollowDex2oatOnly = Boolean.parseBoolean(mPerf.perfGetProp("ro.vendor.qti.cgroup_follow.dex2oat_only", "false"));
             mIsTopAppRenderThreadBoostEnabled = Boolean.parseBoolean(mPerf.perfGetProp("vendor.perf.topAppRenderThreadBoost.enable", "false"));
+            mEnableBgt = Boolean.parseBoolean(mPerf.perfGetProp("vendor.perf.bgt.enable","false"));
         }
 
         mProcessGroupHandler = new Handler(adjusterThread.getLooper(), msg -> {
@@ -1226,17 +1229,8 @@ public final class OomAdjuster {
             // is currently showing UI.
             app.systemNoUi = true;
             if (app == topApp) {
-                // If specific system app has set ProcessRecord.mHasTopUi or is running a remote
-                // animation (ProcessRecord.runningRemoteAnimation), this will prevent topApp
-                // to use SCHED_GROUP_TOP_APP to ensure process with mHasTopUi will have exclusive
-                // access to configured cores.
-                if (mService.containsTopUiOrRunningRemoteAnimOrEmptyLocked(app)) {
-                    app.setCurrentSchedulingGroup(ProcessList.SCHED_GROUP_TOP_APP);
-                } else {
-                    app.setCurrentSchedulingGroup(ProcessList.SCHED_GROUP_DEFAULT);
-                }
                 app.systemNoUi = false;
-
+                app.setCurrentSchedulingGroup(ProcessList.SCHED_GROUP_TOP_APP);
                 app.adjType = "pers-top-activity";
             } else if (app.hasTopUi()) {
                 // sched group/proc state adjustment is below
@@ -1277,20 +1271,10 @@ public final class OomAdjuster {
 
         boolean foregroundActivities = false;
         if (PROCESS_STATE_CUR_TOP == PROCESS_STATE_TOP && app == topApp) {
-
-            // If specific system app has set ProcessRecord.mHasTopUi or is running a remote
-            // animation (ProcessRecord.runningRemoteAnimation), this will prevent topApp
-            // to use SCHED_GROUP_TOP_APP to ensure process with mHasTopUi will have exclusive
-            // access to configured cores.
-            if (mService.containsTopUiOrRunningRemoteAnimOrEmptyLocked(app)) {
-                adj = ProcessList.FOREGROUND_APP_ADJ;
-                schedGroup = ProcessList.SCHED_GROUP_TOP_APP;
-                app.adjType = "top-activity";
-            } else {
-                adj = ProcessList.FOREGROUND_APP_ADJ;
-                schedGroup = ProcessList.SCHED_GROUP_DEFAULT;
-                app.adjType = "top-activity-behind-topui";
-            }
+            // The last app on the list is the foreground app.
+            adj = ProcessList.FOREGROUND_APP_ADJ;
+            schedGroup = ProcessList.SCHED_GROUP_TOP_APP;
+            app.adjType = "top-activity";
             foregroundActivities = true;
             procState = PROCESS_STATE_CUR_TOP;
             if(mIsTopAppRenderThreadBoostEnabled) {
@@ -2260,6 +2244,31 @@ public final class OomAdjuster {
         }
 
         if (app.curAdj != app.setAdj) {
+            // Hooks for background apps transition
+            if (mEnableBgt) {
+                if ((app.setAdj >= ProcessList.CACHED_APP_MIN_ADJ &&
+                        app.setAdj <= ProcessList.CACHED_APP_MAX_ADJ) &&
+                        app.curAdj == ProcessList.FOREGROUND_APP_ADJ &&
+                            app.hasForegroundActivities()) {
+                    Slog.d(TAG,"App adj change from cached state to fg state : "
+                            + app.pid + " " + app.processName);
+                    if (mPerf != null) {
+                        int fgAppPerfLockArgs[] = {BoostFramework.MPCTLV3_GPU_IS_APP_FG, app.pid};
+                        mPerf.perfLockAcquire(10, fgAppPerfLockArgs);
+                    }
+                }
+                if( app.setAdj == ProcessList.PREVIOUS_APP_ADJ &&
+                        (app.curAdj >= ProcessList.CACHED_APP_MIN_ADJ &&
+                        app.curAdj <= ProcessList.CACHED_APP_MAX_ADJ) &&
+                            app.hasActivities()) {
+                    Slog.d(TAG,"App adj change from previous state to cached state : "
+                            + app.pid + " " + app.processName);
+                    if (mPerf != null) {
+                        int bgAppPerfLockArgs[] = {BoostFramework.MPCTLV3_GPU_IS_APP_BG, app.pid};
+                        mPerf.perfLockAcquire(10, bgAppPerfLockArgs);
+                    }
+                }
+            }
             ProcessList.setOomAdj(app.pid, app.uid, app.curAdj);
             if (DEBUG_SWITCH || DEBUG_OOM_ADJ || mService.mCurOomAdjUid == app.info.uid) {
                 String msg = "Set " + app.pid + " " + app.processName + " adj "

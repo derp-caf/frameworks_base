@@ -479,8 +479,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
                 }
                 int currentState = mUnlockTrackSimStates.get(slotId);
                 if(currentState == TelephonyManager.SIM_STATE_READY){
-                    if(simState != TelephonyManager.SIM_STATE_PIN_REQUIRED
-                            && simState != TelephonyManager.SIM_STATE_PUK_REQUIRED){
+                    if(simState != TelephonyManager.SIM_STATE_PIN_REQUIRED) {
                         mUnlockTrackSimStates.put(slotId, simState);
                     }
                 }
@@ -602,7 +601,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
             if (targetUserId != ActivityManager.getCurrentUser()) {
                 return;
             }
-
+            if (DEBUG) Log.d(TAG, "keyguardDone");
             tryKeyguardDone();
         }
 
@@ -621,6 +620,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
         @Override
         public void keyguardDonePending(boolean strongAuth, int targetUserId) {
             Trace.beginSection("KeyguardViewMediator.mViewMediatorCallback#keyguardDonePending");
+            if (DEBUG) Log.d(TAG, "keyguardDonePending");
             if (targetUserId != ActivityManager.getCurrentUser()) {
                 Trace.endSection();
                 return;
@@ -639,6 +639,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
         @Override
         public void keyguardGone() {
             Trace.beginSection("KeyguardViewMediator.mViewMediatorCallback#keyguardGone");
+            if (DEBUG) Log.d(TAG, "keyguardGone");
             mKeyguardViewControllerLazy.get().setKeyguardGoingAwayState(false);
             mKeyguardDisplayManager.hide();
             Trace.endSection();
@@ -889,7 +890,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
             // explicitly DO NOT want to call
             // mKeyguardViewControllerLazy.get().setKeyguardGoingAwayState(false)
             // here, since that will mess with the device lock state.
-            mUpdateMonitor.setKeyguardGoingAway(false);
+            mUpdateMonitor.dispatchKeyguardGoingAway(false);
 
             // Lock immediately based on setting if secure (user has a pin/pattern/password).
             // This also "locks" the device when not secure to provide easy access to the
@@ -1707,9 +1708,14 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
     };
 
     private void tryKeyguardDone() {
+        if (DEBUG) {
+            Log.d(TAG, "tryKeyguardDone: pending - " + mKeyguardDonePending + ", animRan - "
+                    + mHideAnimationRun + " animRunning - " + mHideAnimationRunning);
+        }
         if (!mKeyguardDonePending && mHideAnimationRun && !mHideAnimationRunning) {
             handleKeyguardDone();
         } else if (!mHideAnimationRun) {
+            if (DEBUG) Log.d(TAG, "tryKeyguardDone: starting pre-hide animation");
             mHideAnimationRun = true;
             mHideAnimationRunning = true;
             mKeyguardViewControllerLazy.get()
@@ -1936,6 +1942,7 @@ public class KeyguardViewMediator extends SystemUI implements Dumpable {
     };
 
     private final Runnable mHideAnimationFinishedRunnable = () -> {
+        Log.e(TAG, "mHideAnimationFinishedRunnable#run");
         mHideAnimationRunning = false;
         tryKeyguardDone();
     };

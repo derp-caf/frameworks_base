@@ -25,7 +25,6 @@ import static android.provider.DeviceConfig.NAMESPACE_CONNECTIVITY;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.os.SystemProperties;
 import android.net.TetheringConfigurationParcel;
 import android.net.util.SharedLog;
 import android.provider.DeviceConfig;
@@ -93,6 +92,7 @@ public class TetheringConfiguration {
 
     public final String[] tetherableUsbRegexs;
     public final String[] tetherableWifiRegexs;
+    public final String[] tetherableWigigRegexs;
     public final String[] tetherableWifiP2pRegexs;
     public final String[] tetherableBluetoothRegexs;
     public final String[] tetherableNcmRegexs;
@@ -109,7 +109,6 @@ public class TetheringConfiguration {
     public final String provisioningResponse;
 
     public final int activeDataSubId;
-    private static String fstInterfaceName = "bond0";
 
     private final int mOffloadPollInterval;
     // TODO: Add to TetheringConfigurationParcel if required.
@@ -126,11 +125,8 @@ public class TetheringConfiguration {
         // TODO: Evaluate deleting this altogether now that Wi-Fi always passes
         // us an interface name. Careful consideration needs to be given to
         // implications for Settings and for provisioning checks.
-        if (SystemProperties.getInt("persist.vendor.fst.softap.en", 0) == 1) {
-            tetherableWifiRegexs = new String[] { fstInterfaceName };
-        } else {
-            tetherableWifiRegexs = getResourceStringArray(res, R.array.config_tether_wifi_regexs);
-        }
+        tetherableWifiRegexs = getResourceStringArray(res, R.array.config_tether_wifi_regexs);
+        tetherableWigigRegexs = getResourceStringArray(res, R.array.config_tether_wigig_regexs);
         tetherableWifiP2pRegexs = getResourceStringArray(
                 res, R.array.config_tether_wifi_p2p_regexs);
         tetherableBluetoothRegexs = getResourceStringArray(
@@ -163,14 +159,6 @@ public class TetheringConfiguration {
         configLog.log(toString());
     }
 
-    public static void setFstInterfaceName(String name) {
-        fstInterfaceName = name;
-    }
-
-    public static String getFstInterfaceName() {
-        return fstInterfaceName;
-    }
-
     /** Check whether input interface belong to usb.*/
     public boolean isUsb(String iface) {
         return matchesDownstreamRegexs(iface, tetherableUsbRegexs);
@@ -179,6 +167,11 @@ public class TetheringConfiguration {
     /** Check whether input interface belong to wifi.*/
     public boolean isWifi(String iface) {
         return matchesDownstreamRegexs(iface, tetherableWifiRegexs);
+    }
+
+    /** Check whether input interface belong to wigig.*/
+    public boolean isWigig(String iface) {
+        return matchesDownstreamRegexs(iface, tetherableWigigRegexs);
     }
 
     /** Check whether this interface is Wifi P2P interface. */

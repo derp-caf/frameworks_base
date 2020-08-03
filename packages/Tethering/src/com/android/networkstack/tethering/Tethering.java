@@ -518,11 +518,9 @@ public class Tethering {
         final TetheringConfiguration cfg = mConfig;
 
         if (cfg.isWifi(iface)) {
-            String wigigIface = SystemProperties.get("persist.vendor.wigig.interface", "wigig0");
-            if (wigigIface.equals(iface)) {
-                return TETHERING_WIGIG;
-            }
             return TETHERING_WIFI;
+        } else if (cfg.isWigig(iface)) {
+            return TETHERING_WIGIG;
         } else if (cfg.isWifiP2p(iface)) {
             return TETHERING_WIFI_P2P;
         } else if (cfg.isUsb(iface)) {
