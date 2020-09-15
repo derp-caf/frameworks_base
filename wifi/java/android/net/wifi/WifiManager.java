@@ -39,6 +39,8 @@ import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
 import android.net.MacAddress;
 import android.net.Network;
+import android.net.LinkProperties;
+import android.net.NetworkInfo;
 import android.net.NetworkStack;
 import android.net.wifi.hotspot2.IProvisioningCallback;
 import android.net.wifi.hotspot2.OsuProvider;
@@ -283,14 +285,36 @@ public class WifiManager {
     *
     * @hide
     **/
-    public static final String  WIFI_DATA_STALL = "com.qualcomm.qti.net.wifi.WIFI_DATA_STALL";
+    public static final String  WIFI_ALERT = "com.qualcomm.qti.net.wifi.WIFI_ALERT";
 
     /**
     *
-    * see data stall reason code
+    *
     * @hide
     **/
-    public static final String  EXTRA_WIFI_DATA_STALL_REASON = "data_stall_reasoncode";
+    public static final String  WIFI_NETWORK_DISCONNECTION = "com.qualcomm.qti.net.wifi.WIFI_NETWORK_DISCONNECTION";
+
+    /**
+    *
+    * see alert reason code
+    * @hide
+    **/
+    public static final String  EXTRA_WIFI_ALERT_REASON = "alert_reasoncode";
+
+    /**
+    *
+    * see wifi network disconnection arg 1
+    * @hide
+    **/
+    public static final String  EXTRA_WIFI_NETWORK_DISCONNECTION_ARG1 = "network_disconnection_arg1";
+
+    /**
+    *
+    * see wifi network disconnection arg 2
+    * @hide
+    **/
+    public static final String  EXTRA_WIFI_NETWORK_DISCONNECTION_ARG2 = "network_disconnection_arg2";
+
     /**
      * Broadcast intent action indicating that the credential of a Wi-Fi network
      * has been changed. One extra provides the ssid of the network. Another
@@ -1744,6 +1768,92 @@ public class WifiManager {
               throw e.rethrowFromSystemServer();
           }
       }
+
+    /**
+     * Check whether SoftAp OCV Feature is enabled
+     *
+     * @return true if SoftAp OCV is enabled.
+     *
+     * @hide no intent to publish
+     */
+     public boolean isSoftApOcvFeatureEnabled() {
+         try {
+             return mService.isSoftApOcvFeatureEnabled();
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
+
+    /**
+     * Check whether SoftAp OCV Feature is supported
+     *
+     * @return true if SoftAp OCV is supported.
+     *
+     * @hide no intent to publish
+     */
+     public boolean isSoftApOcvFeatureSupported() {
+         try {
+             return mService.isSoftApOcvFeatureSupported();
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
+
+    /**
+     * Enable/disable SoftAp OCV Feature.
+     *
+     * @hide no intent to publish
+     */
+     public void enableSoftApOcvFeature(boolean enable) {
+         try {
+             mService.enableSoftApOcvFeature(enable);
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
+
+    /**
+     * Check whether SoftAp Beacon Protection Feature is enabled
+     *
+     * @return true if SoftAp Beacon Protection Feature is enabled.
+     *
+     * @hide no intent to publish
+     */
+     public boolean isSoftApBeaconProtFeatureEnabled() {
+         try {
+             return mService.isSoftApBeaconProtFeatureEnabled();
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
+
+    /**
+     * Check whether SoftAp Beacon Protection Feature is supported
+     *
+     * @return true if SoftAp Beacon Protection Feature is supported.
+     *
+     * @hide no intent to publish
+     */
+     public boolean isSoftApBeaconProtFeatureSupported() {
+         try {
+             return mService.isSoftApBeaconProtFeatureSupported();
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
+
+    /**
+     * Enable/disable SoftAp Beacon Protection Feature.
+     *
+     * @hide no intent to publish
+     */
+     public void enableSoftApBeaconProtFeature(boolean enable) {
+         try {
+             mService.enableSoftApBeaconProtFeature(enable);
+         } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
+         }
+     }
 
     /**
      * Internal method for doing the RPC that creates a new network description
@@ -6559,4 +6669,257 @@ public class WifiManager {
             throw e.rethrowFromSystemServer();
         }
     }
+
+    /**
+     * Run driver command from user space
+     * @hide
+     */
+    public String doDriverCmd(String command)
+    {
+        try {
+            return mService.doDriverCmd(command);
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+    /* QTI specific changes - START */
+
+    /**
+     * Wifi Identity Primary
+     * @hide
+     */
+    public static final int STA_PRIMARY = 1;
+
+    /**
+     * Wifi Identity Secondary
+     * @hide
+     */
+    public static final int STA_SECONDARY = 2;
+
+
+    /**
+     * Enable/Disable wifi on #staId interface
+     * @hide
+     */
+    public boolean setWifiEnabled(int staId, boolean enabled) {
+        try {
+            return mService.setWifiEnabled2(mContext.getOpPackageName(), staId, enabled);
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Disassociate from the currently active access point with staId.
+     * @hide
+     */
+    public boolean disconnect(int staId) {
+        try {
+            return mService.disconnect2(staId, mContext.getOpPackageName());
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Return dynamic information about the current Wi-Fi connection with wifiIdentiy.
+     * @hide
+     */
+    @Nullable
+    public WifiInfo getConnectionInfo(int staId) {
+        try {
+            return mService.getConnectionInfo2(staId, mContext.getOpPackageName(), mContext.getAttributionTag());
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+  /**
+     * Return a list of all the networks configured for the current foreground
+     * user.
+     * @hide
+     */
+    @RequiresPermission(allOf = {ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE})
+    @Nullable
+    public List<WifiConfiguration> getConfiguredNetworks(int staId) {
+        try {
+            ParceledListSlice<WifiConfiguration> parceledList =
+                    mService.getConfiguredNetworks2(staId, mContext.getOpPackageName(), mContext.getAttributionTag());
+            if (parceledList == null) {
+                return Collections.emptyList();
+            }
+            return parceledList.getList();
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Base class for WifiNotification callbacks
+     * @hide
+     */
+    public interface WifiNotificationCallback {
+        default void onStateChanged(int state){}
+
+        default void onRssiChanged(int rssi){}
+
+        default void onLinkConfigurationChanged(@NonNull LinkProperties lp){}
+
+        default void onNetworkStateChanged(@NonNull NetworkInfo netInfo){}
+    }
+
+    /**
+     * Callback proxy for WifiNotification objects
+     * @hide
+     */
+    private class WifiNotificationCallbackProxy extends IWifiNotificationCallback.Stub {
+        private final Handler mHandler;
+        private final WifiNotificationCallback mCallback;
+
+        WifiNotificationCallbackProxy(Looper looper, WifiNotificationCallback callback) {
+            mHandler = new Handler(looper);
+            mCallback = callback;
+        }
+
+        @Override
+        public void onStateChanged(int newState) {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "WifiNotificationCallbackProxy: onWifiStateChanged:"
+                        + "newState=" + newState);
+            }
+            mHandler.post(() -> {
+                mCallback.onStateChanged(newState);
+            });
+        }
+
+        @Override
+        public void onRssiChanged(int rssi) {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "WifiNotificationCallbackProxy: onRssiChanged:"
+                        + "rssi=" + rssi);
+            }
+            mHandler.post(() -> {
+                mCallback.onRssiChanged(rssi);
+            });
+        }
+
+        @Override
+        public void onLinkConfigurationChanged(@NonNull LinkProperties lp) {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "WifiNotificationCallbackProxy: onLinkConfiurationChanged:"
+                        + "LinkProperties=" + lp);
+            }
+            mHandler.post(() -> {
+                mCallback.onLinkConfigurationChanged(lp);
+            });
+        }
+
+        @Override
+        public void onNetworkStateChanged(@NonNull NetworkInfo netInfo) {
+            if (mVerboseLoggingEnabled) {
+                Log.v(TAG, "WifiNotificationCallbackProxy: onNetworkStateChanged:"
+                        + "NetworkInfo=" + netInfo);
+            }
+            mHandler.post(() -> {
+                mCallback.onNetworkStateChanged(netInfo);
+            });
+        }
+    }
+
+    /**
+     * Registers a callback for wifi notification.
+     * @hide
+     */
+    @RequiresPermission(android.Manifest.permission.NETWORK_SETTINGS)
+    public void registerForWifiNotification(int staId, @NonNull WifiNotificationCallback callback,
+                                     @Nullable Handler handler) {
+        if (callback == null) throw new IllegalArgumentException("callback cannot be null");
+        Log.v(TAG, "registerForWifiNotification: identity=" + staId  + ", callback=" + callback + ", handler=" + handler);
+
+        Looper looper = (handler == null) ? mContext.getMainLooper() : handler.getLooper();
+
+        Binder binder = new Binder();
+        try {
+            mService.registerForWifiNotification(staId, binder,
+                new WifiNotificationCallbackProxy(looper, callback),
+                callback.hashCode());
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Allow callers to unregister a previously registered callback.
+     * @hide
+     */
+    @RequiresPermission(android.Manifest.permission.NETWORK_SETTINGS)
+    public void unregisterForWifiNotification(int staId, @NonNull WifiNotificationCallback callback) {
+        if (callback == null) throw new IllegalArgumentException("callback cannot be null");
+        Log.v(TAG, "unregisterForWifiNotification: identity=" + staId + ", callback=" + callback);
+
+        try {
+            mService.unregisterForWifiNotification(staId, callback.hashCode());
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /* QTI specific changes - END */
+
+     /**
+      * Check whitelist network roaming feature enabled or not.
+      *
+      * @return true if whitelist network roaming feature is enabled.
+      *
+      * @hide no intent to publish
+      */
+      public boolean isWhitelistNetworkRoamingEnabled() {
+          try {
+              return mService.isWhitelistNetworkRoamingEnabled();
+          } catch (RemoteException e) {
+              throw e.rethrowFromSystemServer();
+          }
+      }
+
+     /**
+      * Enable/disable whitelist network roaming feature.
+      *
+      * @hide no intent to publish
+      */
+      public void enableWhitelistNetworkRoaming(boolean enable) {
+          try {
+              mService.enableWhitelistNetworkRoaming(enable);
+          } catch (RemoteException e) {
+              throw e.rethrowFromSystemServer();
+          }
+      }
+
+     /**
+      * Check auto connection attempts on new networks with partially matched
+      * known networks credentials enabled or not.
+      *
+      * @return true if auto connect new networks feature is enabled.
+      *
+      * @hide no intent to publish
+      */
+      public boolean isNewNetworkAutoConnectionEnabled() {
+          try {
+              return mService.isNewNetworkAutoConnectionEnabled();
+          } catch (RemoteException e) {
+              throw e.rethrowFromSystemServer();
+          }
+      }
+
+     /**
+      * Enable/disable auto connect new network feature.
+      *
+      * @hide no intent to publish
+      */
+      public void enableNewNetworkAutoConnection(boolean enable) {
+          try {
+              mService.enableNewNetworkAutoConnection(enable);
+          } catch (RemoteException e) {
+              throw e.rethrowFromSystemServer();
+          }
+      }
 }
