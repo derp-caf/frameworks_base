@@ -5372,6 +5372,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(SCREENSHOT_TYPE);
             PRIVATE_SETTINGS.add(LOCKSCREEN_PIN_SCRAMBLE_LAYOUT);
             PRIVATE_SETTINGS.add(VOLUME_KEY_CURSOR_CONTROL);
+            PRIVATE_SETTINGS.add(QS_DATAUSAGE);
         }
 
         /**

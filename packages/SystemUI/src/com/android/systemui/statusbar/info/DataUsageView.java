@@ -64,7 +64,7 @@ public class DataUsageView extends TextView {
             SubscriptionManager.getDefaultDataSubscriptionId());
         final DataUsageController.DataUsageInfo info = mobileDataController.getDataUsageInfo();
 
-        formatedinfo = formatDataUsage(info.usageLevel) + " " + mContext.getResources().getString(R.string.usage_data);
+        formatedinfo = formatDataUsage(info.usageLevel) + " ";
         shouldUpdateDataTextView = true;
     }
 
