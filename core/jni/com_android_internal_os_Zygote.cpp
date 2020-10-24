@@ -644,7 +644,7 @@ static void PreApplicationInit() {
   void (*mBeluga)() = nullptr;
   mBelugaHandle = dlopen("libbeluga.so", RTLD_NOW);
   if (!mBelugaHandle) {
-    ALOGW("Unable to open libbeluga.so: %s.", dlerror());
+    ALOGE("Unable to open libbeluga.so: %s.", dlerror());
   }
   else {
     mBeluga = (void (*) ())dlsym(mBelugaHandle, "beluga");
