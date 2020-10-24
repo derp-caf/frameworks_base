@@ -98,6 +98,7 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
         super.onConfigurationChanged(newConfig);
         if (mLayoutOrientation != newConfig.orientation) {
             mLayoutOrientation = newConfig.orientation;
+            mDistributeTiles = true;
             setCurrentItem(0, false);
             mPageToRestore = 0;
         }
@@ -584,5 +585,23 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
 
     public interface PageListener {
         void onPageChanged(boolean isFirst);
+    }
+
+    @Override
+    public void updateSettings() {
+        for (int i = 0; i < mPages.size(); i++) {
+            mPages.get(i).updateSettings();
+        }
+        distributeTiles();
+    }
+
+    @Override
+    public int getNumColumns() {
+        return mPages.get(0).getNumColumns();
+    }
+
+    @Override
+    public boolean isShowTitles() {
+        return mPages.get(0).isShowTitles();
     }
 }

@@ -19,11 +19,14 @@ package com.android.keyguard;
 import android.app.ActivityManager;
 import android.app.IActivityManager;
 import android.content.Context;
+import android.content.ContentResolver;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.os.UserHandle;
+import android.provider.Settings;
+import android.text.Html;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -40,6 +43,7 @@ import androidx.core.graphics.ColorUtils;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.systemui.Dependency;
 import com.android.systemui.R;
+import com.android.keyguard.clock.SmallClockPosition;
 import com.android.systemui.statusbar.policy.ConfigurationController;
 
 import java.io.FileDescriptor;
@@ -76,6 +80,9 @@ public class KeyguardStatusView extends GridLayout implements
     private int mIconTopMargin;
     private int mIconTopMarginWithHeader;
     private boolean mShowingHeader;
+
+    private int mClockSelection;
+    private final SmallClockPosition mClockPosition;
 
     private KeyguardUpdateMonitorCallback mInfoCallback = new KeyguardUpdateMonitorCallback() {
 
@@ -135,6 +142,7 @@ public class KeyguardStatusView extends GridLayout implements
         mIActivityManager = ActivityManager.getService();
         mLockPatternUtils = new LockPatternUtils(getContext());
         mHandler = new Handler();
+        mClockPosition = new SmallClockPosition(getResources());
         onDensityOrFontScaleChanged();
     }
 
@@ -201,7 +209,7 @@ public class KeyguardStatusView extends GridLayout implements
         updateOwnerInfo();
         updateLogoutView();
         updateDark();
-
+        updateSettings();
     }
 
     /**
@@ -251,6 +259,20 @@ public class KeyguardStatusView extends GridLayout implements
 
     private void refreshTime() {
         mClockView.refresh();
+
+        if (mClockSelection == 2) {
+            mClockView.setFormat12Hour(Patterns.clockView12);
+            mClockView.setFormat24Hour(Patterns.clockView24);
+        } else if (mClockSelection == 3) {
+            mClockView.setFormat12Hour(Html.fromHtml("<strong>h</strong>:mm"));
+            mClockView.setFormat24Hour(Html.fromHtml("<strong>kk</strong>:mm"));
+        } else if (mClockSelection == 4) {
+            mClockView.setFormat12Hour("hh\nmm");
+            mClockView.setFormat24Hour("kk\nmm");
+        } else {
+            mClockView.setFormat12Hour(Html.fromHtml("<strong>hh</strong><br>mm"));
+            mClockView.setFormat24Hour(Html.fromHtml("<strong>kk</strong><br>mm"));
+        }
     }
 
     private void updateTimeZone(TimeZone timeZone) {
@@ -281,7 +303,9 @@ public class KeyguardStatusView extends GridLayout implements
      * @return Y position of clock.
      */
     public int getClockPreferredY(int totalHeight) {
-        return mClockView.getPreferredY(totalHeight);
+        /* If using the bigger Sammy Clock, take into account lock icon and statusbar height and padding */
+        return (mClockSelection == 4/*Sammy Clock*/) ? mClockPosition.getPreferredY()
+                : mClockView.getPreferredY(totalHeight) /*totalHeight/2*/;
     }
 
     private void updateLogoutView() {
@@ -350,6 +374,37 @@ public class KeyguardStatusView extends GridLayout implements
         mIconTopMargin = getResources().getDimensionPixelSize(R.dimen.widget_vertical_padding);
         mIconTopMarginWithHeader = getResources().getDimensionPixelSize(
                 R.dimen.widget_vertical_padding_with_header);
+    }
+
+    private void updateSettings() {
+        final ContentResolver resolver = getContext().getContentResolver();
+
+        mClockSelection = Settings.Secure.getIntForUser(resolver,
+                Settings.Secure.LOCKSCREEN_CLOCK_SELECTION, 2, UserHandle.USER_CURRENT);
+
+        mClockView = findViewById(R.id.keyguard_clock_container);
+
+        switch (mClockSelection) {
+            case 1: // hidden
+                mClockView.setVisibility(View.GONE);
+                break;
+            case 2: // default
+                mClockView.setVisibility(View.VISIBLE);
+                break;
+            case 3: // default (bold)
+                mClockView.setVisibility(View.VISIBLE);
+                break;
+            case 4: // sammy
+                mClockView.setVisibility(View.VISIBLE);
+                break;
+            case 5: // sammy (bold)
+                mClockView.setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+    public void updateAll() {
+        updateSettings();
     }
 
     // DateFormat.getBestDateTimePattern is extremely expensive, and refresh is called often.

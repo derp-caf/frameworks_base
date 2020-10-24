@@ -293,9 +293,11 @@ public class KeyguardIndicationController implements StateListener,
                 hideTransientIndication();
             }
             updateIndication(false);
+            mLockIconController.getView().setAlpha(255);
         } else if (!visible) {
             // If we unlock and return to keyguard quickly, previous error should not be shown
             hideTransientIndication();
+            mLockIconController.getView().setAlpha(0);
         }
     }
 
@@ -433,14 +435,7 @@ public class KeyguardIndicationController implements StateListener,
             if (!mKeyguardUpdateMonitor.isUserUnlocked(userId)) {
                 mTextView.switchIndication(com.android.internal.R.string.lockscreen_storage_locked);
             } else if (!TextUtils.isEmpty(mTransientIndication)) {
-                if (powerIndication != null && !mTransientIndication.equals(powerIndication)) {
-                    String indication = mContext.getResources().getString(
-                            R.string.keyguard_indication_trust_unlocked_plugged_in,
-                            mTransientIndication, powerIndication);
-                    mTextView.switchIndication(indication);
-                } else {
-                    mTextView.switchIndication(mTransientIndication);
-                }
+                mTextView.switchIndication(mTransientIndication);
                 isError = mTransientTextIsError;
             } else if (!TextUtils.isEmpty(trustGrantedIndication)
                     && mKeyguardUpdateMonitor.getUserHasTrust(userId)) {

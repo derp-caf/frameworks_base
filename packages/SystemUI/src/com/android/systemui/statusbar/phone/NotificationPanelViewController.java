@@ -2936,6 +2936,10 @@ public class NotificationPanelViewController extends PanelViewController {
         }
     }
 
+    public void updateKeyguardStatusSettings() {
+        mKeyguardStatusView.updateAll();
+    }
+
     public void setStatusAccessibilityImportance(int mode) {
         mKeyguardStatusView.setImportantForAccessibility(mode);
     }
@@ -3186,7 +3190,7 @@ public class NotificationPanelViewController extends PanelViewController {
                     mDoubleTapGesture.onTouchEvent(event);
                 }
 
-                if (mIsLockscreenDoubleTapEnabled
+                if (mIsLockscreenDoubleTapEnabled && !mPulsing && !mDozing
                         && mBarState == StatusBarState.KEYGUARD) {
                     mLockscreenDoubleTapToSleep.onTouchEvent(event);
                 }

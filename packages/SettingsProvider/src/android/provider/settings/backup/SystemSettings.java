@@ -86,5 +86,15 @@ public class SystemSettings {
         Settings.System.NOTIFICATION_LIGHT_PULSE,
         Settings.System.DOUBLE_TAP_SLEEP_GESTURE,
         Settings.System.DOUBLE_TAP_SLEEP_LOCKSCREEN,
+        Settings.System.OMNI_QS_LAYOUT_COLUMNS_LANDSCAPE,
+        Settings.System.OMNI_QS_LAYOUT_COLUMNS,
+        Settings.System.QS_LAYOUT_ROWS,
+        Settings.System.OMNI_QS_TILE_TITLE_VISIBILITY,
+        Settings.System.QS_FOOTER_TEXT_SHOW,
+        Settings.System.QS_FOOTER_TEXT_STRING,
+        Settings.System.QS_SHOW_BRIGHTNESS,
+        Settings.System.QS_BRIGHTNESS_POSITION_BOTTOM,
+        Settings.System.QS_SHOW_BRIGHTNESS_ABOVE_FOOTER,
+        Settings.System.QS_SHOW_AUTO_BRIGHTNESS,
     };
 }
