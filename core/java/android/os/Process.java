@@ -669,6 +669,7 @@ public class Process {
                                                   @Nullable String invokeWith,
                                                   @Nullable String packageName,
                                                   @Nullable long[] disabledCompatChanges,
+                                                  boolean refreshTheme,
                                                   @Nullable String[] zygoteArgs) {
         // Webview zygote can't access app private data files, so doesn't need to know its data
         // info.
@@ -677,7 +678,7 @@ public class Process {
                     abi, instructionSet, appDataDir, invokeWith, packageName,
                     /*zygotePolicyFlags=*/ ZYGOTE_POLICY_FLAG_EMPTY, /*isTopApp=*/ false,
                 disabledCompatChanges, /* pkgDataInfoMap */ null,
-                /* whitelistedDataInfoMap */ null, false, false, zygoteArgs);
+                /* whitelistedDataInfoMap */ null, false, false, refreshTheme, zygoteArgs);
     }
 
     /**

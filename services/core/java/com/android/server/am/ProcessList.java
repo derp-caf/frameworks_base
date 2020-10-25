@@ -2070,6 +2070,7 @@ public final class ProcessList {
             final Process.ProcessStartResult startResult = startProcess(app.hostingRecord,
                     entryPoint, app, app.startUid, gids, runtimeFlags, zygotePolicyFlags,
                     mountExternal, app.seInfo, requiredAbi, instructionSet, invokeWith,
+                    refreshTheme,
                     app.startTime);
 
             synchronized (mService) {
@@ -2294,7 +2295,7 @@ public final class ProcessList {
                         app.processName, uid, uid, gids, runtimeFlags, mountExternal,
                         app.info.targetSdkVersion, seInfo, requiredAbi, instructionSet,
                         app.info.dataDir, null, app.info.packageName, app.mDisabledCompatChanges, true
-                        new String[]{PROC_START_SEQ_IDENT + app.startSeq});
+                        , new String[]{PROC_START_SEQ_IDENT + app.startSeq});
             } else if (hostingRecord.usesAppZygote()) {
                 final AppZygote appZygote = createAppZygoteForProcessIfNeeded(app);
 
