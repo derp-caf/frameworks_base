@@ -26,9 +26,7 @@ import android.app.WindowConfiguration;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
-import android.os.UserHandle;
 import android.os.RemoteException;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.SurfaceControl;
@@ -38,6 +36,8 @@ import android.view.WindowManagerGlobal;
 import com.android.systemui.shared.recents.view.AppTransitionAnimationSpecsFuture;
 import com.android.systemui.shared.recents.view.RecentsTransition;
 import com.android.systemui.shared.system.PinnedStackListenerForwarder.PinnedStackListener;
+
+import com.android.internal.util.derp.DerpUtils;
 
 public class WindowManagerWrapper {
 
@@ -171,10 +171,8 @@ public class WindowManagerWrapper {
      * @return whether there is a soft nav bar on specific display.
      */
     public boolean hasSoftNavigationBar(Context context, int displayId) {
-        if (displayId == Display.DEFAULT_DISPLAY &&
-                Settings.System.getIntForUser(context.getContentResolver(),
-                            Settings.System.FORCE_SHOW_NAVBAR, 0,
-                            UserHandle.USER_CURRENT) == 1) {
+        if (displayId == Display.DEFAULT_DISPLAY && 
+            DerpUtils.deviceSupportNavigationBar(context)) {
             return true;
         }
         try {
