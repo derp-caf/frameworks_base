@@ -771,7 +771,7 @@ public class EdgeBackGestureHandler extends CurrentUserTracker implements Displa
                 ActionUtils.switchScreenOff(mContext);
                 break;
             case 8: // Screenshot
-                SyberiaUtils.takeScreenshot(true);
+                DerpUtils.takeScreenshot(true);
                 break;
             case 9: // Notification panel
                 ActionUtils.toggleNotifications();
@@ -790,6 +790,9 @@ public class EdgeBackGestureHandler extends CurrentUserTracker implements Displa
                 break;
             case 14: // Switch recent app
                 ActionUtils.switchToLastApp(mContext);
+                break;
+            case 15: // Partial screenshot
+                DerpUtils.takeScreenshot(false);
                 break;
         }
     }

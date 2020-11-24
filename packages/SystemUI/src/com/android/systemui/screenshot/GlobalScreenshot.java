@@ -74,6 +74,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.MathUtils;
 import android.util.Slog;
+import android.view.Choreographer;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
