@@ -1952,14 +1952,15 @@ private boolean isDozeMode() {
             mBurnInProtectionHelper = new BurnInProtectionHelper(
                     context, minHorizontal, maxHorizontal, minVertical, maxVertical, maxRadius);
         }
-
         mHandler = new PolicyHandler();
+
         mSwipeToScreenshot = new SwipeToScreenshotListener(context, new SwipeToScreenshotListener.Callbacks() {
             @Override
             public void onSwipeThreeFinger() {
-                mHandler.post(mScreenshotRunnable);
-            }
+                    DerpUtils.takeScreenshot(true);
+                }
         });
+
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         mCameraManager.registerTorchCallback(new TorchModeCallback(), mHandler);
         mWakeGestureListener = new MyWakeGestureListener(mContext, mHandler);
