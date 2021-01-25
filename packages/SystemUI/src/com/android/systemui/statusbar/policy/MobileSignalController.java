@@ -583,6 +583,8 @@ public class MobileSignalController extends SignalController<
                 || mConfig.alwaysShowNetworkTypeIcon) ? icons.mDataType : 0;
         if ( mConfig.enableRatIconEnhancement ) {
             typeIcon = getEnhancementDataRatIcon();
+        }else if ( mConfig.enableDdsRatIconEnhancement ) {
+            typeIcon = getEnhancementDdsRatIcon();
         }
         int volteIcon = mConfig.showVolteIcon && isVolteSwitchOn() ? getVolteResId() : 0;
         MobileIconGroup vowifiIconGroup = getVowifiIconGroup();
@@ -829,15 +831,21 @@ public class MobileSignalController extends SignalController<
             if ( mFiveGState.isNrIconTypeValid() ) {
                 mCurrentState.iconGroup = mFiveGState.getIconGroup();
             }else {
-                int iconType = TelephonyManager.NETWORK_TYPE_UNKNOWN;
                 if (mCurrentState.connected) {
                     if (isDataNetworkTypeAvailable()) {
-                        iconType = mTelephonyDisplayInfo.getNetworkType();
+                        int type = mTelephonyDisplayInfo.getOverrideNetworkType();
+                        if (type == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE
+                                || type == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE
+                                || type == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA ) {
+                            iconKey = toIconKey(mTelephonyDisplayInfo.getNetworkType());
+                        }else {
+                            iconKey = toDisplayIconKey(type);
+                        }
                     } else {
-                        iconType = getVoiceNetworkType();
+                        iconKey = toIconKey(getVoiceNetworkType());
                     }
                 }
-                mCurrentState.iconGroup = mNetworkToIconLookup.getOrDefault(toIconKey(iconType),
+                mCurrentState.iconGroup = mNetworkToIconLookup.getOrDefault(iconKey,
                         mDefaultIcons);
             }
         }
@@ -979,17 +987,21 @@ public class MobileSignalController extends SignalController<
     }
 
     private int getEnhancementDataRatIcon() {
-        int ratIcon = 0;
-        if ( showDataRatIcon() ) {
-            MobileIconGroup iconGroup = mDefaultIcons;
-            if ( mFiveGState.isNrIconTypeValid() ) {
-                iconGroup = mFiveGState.getIconGroup();
-            }else {
-                iconGroup = getNetworkTypeIconGroup();
-            }
-            ratIcon = iconGroup.mDataType;
+        return showDataRatIcon() ? getRatIconGroup().mDataType : 0;
+    }
+
+    private int getEnhancementDdsRatIcon() {
+        return mCurrentState.dataSim ? getRatIconGroup().mDataType : 0;
+    }
+
+    private MobileIconGroup getRatIconGroup() {
+        MobileIconGroup iconGroup = mDefaultIcons;
+        if ( mFiveGState.isNrIconTypeValid() ) {
+            iconGroup = mFiveGState.getIconGroup();
+        }else {
+            iconGroup = getNetworkTypeIconGroup();
         }
-        return ratIcon;
+        return iconGroup;
     }
 
     private boolean isVowifiAvailable() {
