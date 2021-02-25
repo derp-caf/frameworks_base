@@ -5771,6 +5771,5 @@ public final class PowerManagerService extends SystemService
         public boolean interceptPowerKeyDown(KeyEvent event) {
             return interceptPowerKeyDownInternal(event);
         }
-
     }
 }
